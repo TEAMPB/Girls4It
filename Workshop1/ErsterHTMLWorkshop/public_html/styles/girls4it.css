@@ -1,0 +1,46 @@
+/*
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+*/
+/* 
+    Created on : 23.08.2016, 17:55:24
+    Author     : mke
+*/
+
+/* BEISPIELE */
+
+/* das hier referenziert jeden Tag des typs h2 */
+h2 {
+    /* der text wird immer groß geschrieben */
+    text-transform: uppercase;
+}
+
+/* das hier referenziert jedes element mit der Klasse fatty */
+.fatty{
+    /* der Text innerhalb wird fett geschrieben */ 
+    font-weight: bold;
+}
+/* das hier referenziert einen tag mit einer speziellen ID, also genau ein Objekt pro seite */ 
+#specialText{
+    color:red;
+    background-color: yellow;
+}
+
+/* Grundlage für einen Container */
+.container{
+    /* enthaltene Elemente werden wirklich innerhalb gezeichnet */ 
+    display: inline-block;
+    /* etwas Platz nach außen schaffen */
+    padding:10px;
+}
+
+/* Grundlage für Inhalte in einem Container */
+.content{
+    /* fließt nach links, sobald der Monitorbereich zu klein wird */
+    float: left; 
+    /* etwas Platz nach außen schaffen */
+    padding:10px; 
+    /* grauen Rahmen um das element ziehen*/
+    border-style: groove;
+}

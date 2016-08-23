@@ -6,11 +6,40 @@ and open the template in the editor.
 -->
 <html>
     <head>
-        <title>TODO supply a title</title>
+        <title>Unser erstes HTML Projekt</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="js/girls4it.js" type="text/javascript"></script>
+        <script src="js/jquery-3.1.0.min.js" type="text/javascript"></script>
+        <link href="styles/girls4it.css" rel="stylesheet" type="text/css"/>
     </head>
     <body>
-        <div>TODO write content</div>
+        <h1>Titel!</h1>
+        <h2>ich wär so gern klein geschrieben</h2>
+        <div class="fatty">
+            Man bin ich fett man!
+        </div>
+        <div>
+            Ich bin ganz normal.
+        </div>
+        <div id="specialText">
+            Ich bin super speziell!
+        </div>
+        <br>
+        <br>
+        <div class="container" style="background-color:black">
+            <div class="content" style="background-color: teal;font-size: 40px">
+                &#9818;
+            </div>
+            <div class="content" style="background-color: teal;font-size: 40px">
+                &#9817;
+            </div>
+        </div>
+        
+        <div id="malbarerBereich">
+              Ich kann bemalt werden
+        </div>
+        <button onclick="maleBereichRot()">Rot mit Standard-js</button>
+        <button onclick="maleBereichGruenMitjQuery()">Grün mit jQuery</button>
     </body>
 </html>
