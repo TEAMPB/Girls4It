@@ -1,16 +1,4 @@
 node_modules
 bower_components
 
-hybrid/platforms
 hybrid/www/*
-
-src/js/libs
-themes
-!hybrid/plugins
-hybrid/plugins/*
-!hybrid/plugins/fetch.json
-
-!/hybrid/platforms/
-!/hybrid/plugins/cordova-plugin-whitelist/
-!/themes/
-!/src/js/libs/
