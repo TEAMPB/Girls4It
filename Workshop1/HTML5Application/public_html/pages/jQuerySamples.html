@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>jQuery Beispiele</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="../js/jquery-3.1.0.min.js" type="text/javascript"></script>
+        <script src="../js/jquery-ui.js" type="text/javascript"></script>
+        <link href="../styles/jQuerySamples.css" rel="stylesheet" type="text/css"/>
+        <link href="../styles/main.css" rel="stylesheet" type="text/css"/>
+        <link href="../styles/jquery-ui.css" rel="stylesheet" type="text/css"/>
+        <link href="../styles/jquery-ui.structure.css" rel="stylesheet" type="text/css"/>
+        <link href="../styles/jquery-ui.theme.css" rel="stylesheet" type="text/css"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script>
+
+            function generateRandomColor() {
+                var bgColors = ['RED', 'BLACK', 'BLUE', 'PINK', 'TEAL', 'GRAY'];
+                var colors = ['BLACK', 'WHITE', 'Orange', 'BLUE', 'GREEN', 'BROWN'];
+                var random = Math.floor(Math.random() * colors.length);
+
+                randomWidth = (random +1) * 100;
+                bgColor = bgColors[random];
+                color = colors[random];
+            }
+            
+            function changeDiv() {
+                    generateRandomColor();
+                    $("#effect").animate({
+                        backgroundColor: bgColor,
+                        color: color,
+                        width: randomWidth
+                    }, 2500);
+                }
+                ;
+
+            $(function () {
+                $(".draggable").draggable({helper: 'clone'});
+
+                $(".droppable").droppable({
+                    drop: function (ev, ui) {
+                        var self = $(this);
+                        self.children('div').remove();
+                        generateRandomColor()
+                        $(ui.draggable).clone().css('background-color', bgColor).appendTo(this);
+                    }
+                });
+
+                $("#datepicker").datepicker();
+
+                
+            });
+        </script>
+    </head>
+    <body>
+        <h1>
+            Beispiele zum Framework jQuery
+        </h1>
+        <div style="border-style: dashed; display: inline-block; padding: 20px;">
+            <h3>
+                Drag and Drop Beispiel
+            </h3>
+            <div class="draggable" style="background-color: green; float: left; ">
+                <p>Drag me to my target</p>
+            </div>
+            <div class="droppable" style="background-color: yellow; float: left; ">
+                <p>Drop here</p>
+            </div>
+        </div>
+        <div style="border-style: dashed; padding: 20px; ">
+            <h3>
+                Datumsauswahl
+            </h3>
+            <p> 
+                Datum: <input type="text" id="datepicker">
+            </p>
+        </div>
+        <div style="border-style: dashed; display: inline-block; padding: 20px;">
+            <h3>
+                Dynamische Veränderung von Containern
+            </h3>
+            <div id="effect" >
+                <p>Drag me to my target</p>
+            </div>
+            <button id="button" onclick="changeDiv()">Verändern!</button> 
+        </div>
+        <br>
+        <footer>
+            <a class="navButton" href="../index.html">Zurück</a>
+        </footer>
+    </body>
+</html>

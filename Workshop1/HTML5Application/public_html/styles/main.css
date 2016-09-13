@@ -1,0 +1,62 @@
+/*
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+*/
+/* 
+    Created on : 22.08.2016, 12:53:28
+    Author     : mke
+*/
+
+.blackField{
+    background-color: gray;
+    height: 30px;
+    width: 30px;
+    font-size: 24px;
+    text-align: center;
+}
+
+.whiteField{
+    background-color: #ebebeb;
+    height: 30px;
+    width: 30px;
+    font-size: 24px;
+    text-align: center;
+}
+
+.contentBox{
+    float: left; 
+    padding:20px; 
+    border-style: groove;
+}
+
+.navButton{
+    -moz-appearance: button;
+    -ms-appearance: button;
+    -o-appearance: button;
+    -webkit-appearance: button;
+    appearance: button;
+    text-decoration: none;
+    color: #000;
+    padding: 0.2em 0.4em;
+}​
+
+html {
+    position: relative;
+    min-height: 100%;
+}
+body {
+    margin: 0 0 80px; /* bottom = footer height */
+}
+header{
+    background-color: #d70000;
+}
+
+footer{
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 70px;
+    width: 100%;
+    background-color: #d70000
+}
