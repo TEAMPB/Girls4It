@@ -10,3 +10,7 @@ themes
 hybrid/plugins/*
 !hybrid/plugins/fetch.json
 
+!/hybrid/platforms/
+!/hybrid/plugins/cordova-plugin-whitelist/
+!/themes/
+!/src/js/libs/
