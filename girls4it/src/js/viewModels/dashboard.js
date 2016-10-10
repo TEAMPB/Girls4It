@@ -7,6 +7,7 @@
  */
 define(['ojs/ojcore', 'knockout', 'jquery'],
  function(oj, ko, $) {
+     
   
     function DashboardViewModel() {
       var self = this;
@@ -75,3 +76,5 @@ define(['ojs/ojcore', 'knockout', 'jquery'],
     return new DashboardViewModel();
   }
 );
+
+
