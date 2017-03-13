@@ -14,7 +14,8 @@ requirejs.config(
 
   // Path mappings for the logical module names
   paths:
-  //injector:mainReleasePaths
+//injector:mainReleasePaths
+
   {
     'knockout': 'libs/knockout/knockout-3.4.0.debug',
     'jquery': 'libs/jquery/jquery-3.1.0',
@@ -28,7 +29,8 @@ requirejs.config(
     'text': 'libs/require/text',
     'signals': 'libs/js-signals/signals'
   }
-  //endinjector
+  
+//endinjector
   ,
   // Shim configurations for modules that do not expose AMD
   shim:

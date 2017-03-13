@@ -8,7 +8,7 @@
     },
     "installed_plugins": {
         "cordova-plugin-whitelist": {
-            "PACKAGE_NAME": "org.oraclejet.oraclejetdemo"
+            "PACKAGE_NAME": "de.girls4it"
         }
     },
     "dependent_plugins": {}

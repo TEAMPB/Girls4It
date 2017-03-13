@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates.
  * The Universal Permissive License (UPL), Version 1.0
  */
 /**
@@ -591,7 +591,7 @@ define(['ojs/ojcore', 'jquery', 'ojs/ojeditablevalue'],
           $(event.currentTarget).addClass('oj-active');
         }
       },
-      touchstart: function (event) {
+      "touchstart": function (event) {
         this._SetValue(!this.option('value'), event);
         event.preventDefault();
       }

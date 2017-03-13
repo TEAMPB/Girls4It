@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates.
  * The Universal Permissive License (UPL), Version 1.0
  */
 "use strict";
@@ -384,7 +384,7 @@ oj.OffcanvasUtils._getTranslationY2 = function(height, negate)
   return "translate3d(0, " + minus + height + ", 0)";
 };
 
-oj.OffcanvasUtils._setAnimateClass = function(offcanvas, drawer, $main, 
+oj.OffcanvasUtils._setAnimateClass = function(offcanvas, drawer, $main,
                                               dtranslation, mtranslation)
 {
   drawer.addClass(oj.OffcanvasUtils.TRANSITION_SELECTOR);
@@ -449,7 +449,7 @@ oj.OffcanvasUtils._toggleClass = function(offcanvas, wrapper, isOpen)
     //remove oj-focus-highlight
     if (offcanvas["makeFocusable"]) {
       oj.DomUtils.makeFocusable({
-        'element': drawer, 
+        'element': drawer,
         'remove': true
       });
     }
@@ -730,7 +730,7 @@ oj.OffcanvasUtils._toggleOuterWrapper = function(offcanvas, drawer, test)
   var edge = oj.OffcanvasUtils._getEdge(drawer),
       shiftSelector = oj.OffcanvasUtils._getShiftSelector(edge),
       outerWrapper = oj.OffcanvasUtils._getOuterWrapper(drawer);
-  oj.Assert.assertPrototype(outerWrapper, jQuery);
+  oj.Assert.assertPrototype(outerWrapper, $);
 
   var isOpen = outerWrapper.hasClass(shiftSelector);
   if (! test) {
@@ -743,11 +743,11 @@ oj.OffcanvasUtils._toggleOuterWrapper = function(offcanvas, drawer, test)
 oj.OffcanvasUtils._detachDetector = function(target, endHandler)
 {
   var rafId = 0;
-  //request animation frame in case the transition end get lost. 
+  //request animation frame in case the transition end get lost.
   //for example: if offcanvas is hidden before transition end
   var checkDetachedHandler = function()
   {
-    var offsetParent = ($(target).css("position") === "fixed") ? 
+    var offsetParent = ($(target).css("position") === "fixed") ?
       target.parentNode.offsetParent : target.offsetParent;
 
     //if offcanvas is detached, ex: parent display:none
@@ -781,7 +781,7 @@ oj.OffcanvasUtils._afterCloseHandler = function(offcanvas)
 
   //After animation, set display:none and remove transition class
   if (isPin) {
-    drawer.removeClass(oj.OffcanvasUtils.OPEN_SELECTOR + " " + 
+    drawer.removeClass(oj.OffcanvasUtils.OPEN_SELECTOR + " " +
                       oj.OffcanvasUtils.PIN_TRANSITION_SELECTOR);
   }
   else {
@@ -909,7 +909,7 @@ oj.OffcanvasUtils._openPush = function(offcanvas, resolve, reject, edge)
 {
   var drawer = oj.OffcanvasUtils._getDrawer(offcanvas);
   var $main = $(offcanvas[oj.OffcanvasUtils.CONTENT_KEY]);
-  oj.Assert.assertPrototype($main, jQuery);
+  oj.Assert.assertPrototype($main, $);
 
   //since drawer and main are animated seperately,
   //only resolve true when both transitions are ended
@@ -928,7 +928,7 @@ oj.OffcanvasUtils._openPush = function(offcanvas, resolve, reject, edge)
       if (size === undefined)
         size = drawer.outerWidth(true) + "px";
 
-      oj.OffcanvasUtils._setTransform(drawer, 
+      oj.OffcanvasUtils._setTransform(drawer,
                                       oj.OffcanvasUtils._getTranslationX(edge, size, true));
       translation = oj.OffcanvasUtils._getTranslationX(edge, size, false);
     }
@@ -936,7 +936,7 @@ oj.OffcanvasUtils._openPush = function(offcanvas, resolve, reject, edge)
       if (size === undefined)
         size = drawer.outerHeight(true) + "px";
 
-      oj.OffcanvasUtils._setTransform(drawer, 
+      oj.OffcanvasUtils._setTransform(drawer,
         oj.OffcanvasUtils._getTranslationY2(size, edge === oj.OffcanvasUtils.EDGE_TOP));
 
       translation = oj.OffcanvasUtils._getTranslationY2(size, edge !== oj.OffcanvasUtils.EDGE_TOP);
@@ -998,11 +998,11 @@ oj.OffcanvasUtils._openOverlay = function(offcanvas, resolve, reject, edge)
   var size = offcanvas["size"];
   if (size) {
     if (edge === oj.OffcanvasUtils.EDGE_START || edge === oj.OffcanvasUtils.EDGE_END) {
-      oj.OffcanvasUtils._setTransform(drawer, 
+      oj.OffcanvasUtils._setTransform(drawer,
                                       oj.OffcanvasUtils._getTranslationX(edge, size, true));
     }
     else {
-      oj.OffcanvasUtils._setTransform(drawer, 
+      oj.OffcanvasUtils._setTransform(drawer,
                                       oj.OffcanvasUtils._getTranslationY(edge, size));
     }
   }
@@ -1012,7 +1012,7 @@ oj.OffcanvasUtils._openOverlay = function(offcanvas, resolve, reject, edge)
   {
     oj.OffcanvasUtils._toggleOuterWrapper(offcanvas, drawer, false);
 
-  }, 10); //chrome is fine with 0ms but FF needs ~10ms or it wont animate
+  }, 20); //chrome is fine with 0ms but FF needs ~10ms or it wont animate
 
   //insert a glassPane if offcanvas is modal
   oj.OffcanvasUtils._applyModality(offcanvas, drawer);
@@ -1042,7 +1042,7 @@ oj.OffcanvasUtils._openPin = function(offcanvas, resolve, reject, edge)
 {
   var drawer = oj.OffcanvasUtils._getDrawer(offcanvas);
   var $main = $(offcanvas[oj.OffcanvasUtils.CONTENT_KEY]);
-  oj.Assert.assertPrototype($main, jQuery);
+  oj.Assert.assertPrototype($main, $);
 
   var size = offcanvas["size"];
 
@@ -1078,7 +1078,7 @@ oj.OffcanvasUtils._openPin = function(offcanvas, resolve, reject, edge)
   oj.OffcanvasUtils._applyModality(offcanvas, drawer);
 
   //add transition end listener
-  oj.OffcanvasUtils._onTransitionEnd(drawer, 
+  oj.OffcanvasUtils._onTransitionEnd(drawer,
     function () {
       //After animation, remove transition class
 //      drawer.removeClass(oj.OffcanvasUtils.TRANSITION_SELECTOR);
@@ -1194,7 +1194,7 @@ oj.OffcanvasUtils._openOldDrawer = function(offcanvas, resolve, reject, edge, di
 {
   var drawer = oj.OffcanvasUtils._getDrawer(offcanvas);
   var wrapper = oj.OffcanvasUtils._getAnimateWrapper(offcanvas);
-  oj.Assert.assertPrototype(wrapper, jQuery);
+  oj.Assert.assertPrototype(wrapper, $);
 
   //Before animation, remove display:none and add transition class
   oj.OffcanvasUtils._toggleClass(offcanvas, wrapper, true);
@@ -1383,7 +1383,7 @@ oj.OffcanvasUtils.open = function(offcanvas)
   var veto = false;
   var promise = new Promise(function(resolve, reject)
   {
-    oj.Assert.assertPrototype(drawer, jQuery);
+    oj.Assert.assertPrototype(drawer, $);
 
     //save the edge
     var edge = oj.OffcanvasUtils._saveEdge(offcanvas);
@@ -1469,7 +1469,7 @@ oj.OffcanvasUtils._close = function(selector, animation)
 {
   var drawer = $(selector);
 
-  oj.Assert.assertPrototype(drawer, jQuery);
+  oj.Assert.assertPrototype(drawer, $);
 
   var offcanvas = $.data(drawer[0], oj.OffcanvasUtils._DATA_OFFCANVAS_KEY);
 
@@ -1563,7 +1563,7 @@ oj.OffcanvasUtils._close = function(selector, animation)
 oj.OffcanvasUtils.toggle = function(offcanvas)
 {
   var drawer = oj.OffcanvasUtils._getDrawer(offcanvas);
-  oj.Assert.assertPrototype(drawer, jQuery);
+  oj.Assert.assertPrototype(drawer, $);
 
   if (oj.OffcanvasUtils._isOpen(drawer)) {
     return oj.OffcanvasUtils.close(offcanvas);
@@ -1656,7 +1656,7 @@ oj.OffcanvasUtils._restoreOrder = function (offcanvas)
   var drawer = oj.OffcanvasUtils._getDrawer(offcanvas);
   var surrogate = offcanvas[oj.OffcanvasUtils.SURROGATE_KEY];
 
-  if (drawer && surrogate && 
+  if (drawer && surrogate &&
       drawer.attr(oj.OffcanvasUtils.SURROGATE_ATTR) === surrogate.attr("id"))
   {
     drawer.insertAfter(surrogate); // @HTMLUpdateOK
@@ -1770,7 +1770,7 @@ oj.OffcanvasUtils.setupPanToReveal = function(offcanvas)
 
     $(outerWrapper)
     .ojHammer(mOptions)
-    .on("panstart", function(event) 
+    .on("panstart", function(event)
     {
         direction = null;
 
@@ -1796,7 +1796,7 @@ oj.OffcanvasUtils.setupPanToReveal = function(offcanvas)
         {
             return;
         }
- 
+
         ui = {"direction": direction, "distance": Math.abs(event['gesture']['deltaX'])};
         evt = $.Event("ojpanstart");
         drawer.trigger(evt, ui);
@@ -1813,11 +1813,14 @@ oj.OffcanvasUtils.setupPanToReveal = function(offcanvas)
             oj.OffcanvasUtils._toggleClass(offcanvas, wrapper, true);
             proceed = true;
 
+            // stop touch event from bubbling to prevent for example pull to refresh from happening
+            event['gesture']['srcEvent'].stopPropagation();
+
             // stop bubbling
             event.stopPropagation();
         }
     })
-    .on("panmove", function(event) 
+    .on("panmove", function(event)
     {
         // don't do anything if start is vetoed
         if (!proceed)
@@ -1825,22 +1828,30 @@ oj.OffcanvasUtils.setupPanToReveal = function(offcanvas)
             return;
         }
 
-        delta = Math.abs(event['gesture']['deltaX']);
+        delta = event['gesture']['deltaX'];
+        if ((direction == "start" && delta > 0) || (direction == "end" && delta < 0))
+        {
+            oj.OffcanvasUtils._setTranslationX(wrapper, "start", "0px");
+            return;
+        }
 
-        drawer.css("width", delta);
+        drawer.css("width", Math.abs(delta));
 
         // don't do css transition animation while panning
         wrapper.removeClass(oj.OffcanvasUtils.TRANSITION_SELECTOR);
-        oj.OffcanvasUtils._setTranslationX(wrapper, "start", event['gesture']['deltaX']+"px"); 
+        oj.OffcanvasUtils._setTranslationX(wrapper, "start", delta+"px");
 
-        ui = {"direction": direction, "distance": delta};
+        ui = {"direction": direction, "distance": Math.abs(delta)};
         evt = $.Event("ojpanmove");
         drawer.trigger(evt, ui);
+
+        // stop touch event from bubbling to prevent for example pull to refresh from happening
+        event['gesture']['srcEvent'].stopPropagation();
 
         // stop bubbling
         event.stopPropagation();
     })
-    .on("panend", function(event) 
+    .on("panend", function(event)
     {
         // don't do anything if start is vetoed
         if (!proceed)
@@ -1861,8 +1872,6 @@ oj.OffcanvasUtils.setupPanToReveal = function(offcanvas)
 
         if (!evt.isDefaultPrevented())
         {
-            wrapper.addClass(oj.OffcanvasUtils.TRANSITION_SELECTOR);
-
             edge = offcanvas["edge"];
             if (edge == null)
             {
@@ -1876,11 +1885,7 @@ oj.OffcanvasUtils.setupPanToReveal = function(offcanvas)
                 }
             }
 
-            oj.OffcanvasUtils._onTransitionEnd(wrapper, function() {
-                drawer.css("width", size+"px");
-            });
-
-            oj.OffcanvasUtils._setTranslationX(wrapper, edge, size+"px"); 
+            oj.OffcanvasUtils._animateWrapperAndDrawer(wrapper, drawer, edge, size);
 
             $.data(drawer[0], oj.OffcanvasUtils._DATA_OFFCANVAS_KEY, offcanvas);
             $.data(drawer[0], oj.OffcanvasUtils._DATA_EDGE_KEY, edge);
@@ -1908,8 +1913,62 @@ oj.OffcanvasUtils.setupPanToReveal = function(offcanvas)
 
         // restore item position
         wrapper.addClass(oj.OffcanvasUtils.TRANSITION_SELECTOR);
-        oj.OffcanvasUtils._setTranslationX(wrapper, "start", "0px"); 
+        oj.OffcanvasUtils._setTranslationX(wrapper, "start", "0px");
     });
+};
+
+// animate both the wrapper and drawer at the same time
+oj.OffcanvasUtils._animateWrapperAndDrawer = function(wrapper, drawer, edge, size)
+{
+    var tt = 400, fps = 60, ifps, matrix, values, current, final, reqId, inc, lastFrame, func, currentFrame, adjInc;
+
+    // since we can't synchronize two css transitions, we'll have to do the animation ourselves using
+    // requestAnimationFrame
+    // make sure wrapper animation is off
+    wrapper.removeClass(oj.OffcanvasUtils.TRANSITION_SELECTOR);
+
+    // ideal ms per frame
+    ifps = Math.round(1000/fps);
+    matrix = wrapper.css("transform");
+    values = matrix.split('(')[1].split(')')[0].split(',');
+    // this is the translateX
+    current = parseInt(values[4], 10);
+    // the final size/destination
+    final = edge == "end" ? 0-size : size;
+    // calculate the increment needed to complete transition in 400ms with 60fps
+    inc = Math.max(1, Math.abs(final - current) / (tt / ifps));
+    lastFrame = (new Date()).getTime();
+    func = function()
+    {
+        currentFrame = (new Date()).getTime();
+        // see how much we'll need to compensate if fps drops below ideal
+        adjInc = Math.max(inc, inc * Math.max((currentFrame - lastFrame) / ifps));
+        lastFrame = currentFrame;
+        if (current < final)
+        {
+            current = Math.min(final, current+adjInc);
+        }
+        else if (current > final)
+        {
+            current = Math.max(final, current-adjInc);
+        }
+
+        oj.OffcanvasUtils._setTranslationX(wrapper, edge, Math.abs(current)+"px");
+        drawer.css("width", Math.abs(current)+"px");
+
+        // make sure to cancel the animation frame if we are done
+        if (current == final)
+        {
+            window.cancelAnimationFrame(reqId);
+            wrapper.addClass(oj.OffcanvasUtils.TRANSITION_SELECTOR);
+        }
+        else
+        {
+            reqId = window.requestAnimationFrame(func);
+        }
+    };
+
+    reqId = window.requestAnimationFrame(func);
 };
 
 /**

@@ -1073,6 +1073,7 @@ oj-conveyor-belt:not(.oj-complete) {
   position: relative; }
 
 .oj-conveyorbelt,
+.oj-conveyorbelt-overflow-container,
 .oj-conveyorbelt-content-container {
   display: -webkit-flex;
   display: flex;
@@ -1084,14 +1085,20 @@ oj-conveyor-belt:not(.oj-complete) {
   display: inline-flex; }
 
 .oj-conveyorbelt.oj-conveyorbelt-vertical,
-.oj-conveyorbelt.oj-conveyorbelt-vertical > .oj-conveyorbelt-content-container {
+.oj-conveyorbelt.oj-conveyorbelt-vertical > .oj-conveyorbelt-overflow-container,
+.oj-conveyorbelt.oj-conveyorbelt-vertical > .oj-conveyorbelt-overflow-container > .oj-conveyorbelt-content-container {
   -webkit-flex-direction: column;
   flex-direction: column; }
 
-.oj-conveyorbelt-content-container {
+.oj-conveyorbelt-overflow-container {
   overflow: hidden;
   -webkit-flex: 1 1 auto;
   flex: 1 1 auto; }
+
+.oj-conveyorbelt-content-container {
+  position: relative;
+  -webkit-flex: 1 0 auto;
+  flex: 1 0 auto; }
 
 .oj-conveyorbelt-item {
   -webkit-flex: 0 0 auto;
@@ -1585,7 +1592,12 @@ oj-tabs:not(.oj-complete) {
 
 /*
      * applied to the horizontal tab
+     * need to set overflow-x to hidden to avoid the scrollbar from showing up
+     * temporarily while adding a new tab.
      */
+.oj-tabs-horizontal.oj-tabs {
+  overflow-x: hidden; }
+
 .oj-tabs-horizontal > .oj-tabs-nav-root .oj-tabs-tab {
   display: inline-block;
   position: relative; }
@@ -3627,7 +3639,6 @@ html[dir="rtl"] .oj-navigationlist-group-item {
 
 /* expand and collapse animation */
 .oj-navigationlist-collapsible .oj-navigationlist-collapsible-transition {
-  transition: max-height 0.4s;
   overflow: hidden; }
 
 /* Collapse or expand icon color should not change on hover*/
@@ -3877,6 +3888,9 @@ html[dir="rtl"] .oj-navigationlist-horizontal.oj-navigationlist-icon-only .oj-na
   justify-content: center;
   padding: 0.5rem 1.072rem 4px; }
 
+.oj-navigationlist-horizontal.oj-navigationlist-stack-icon-label:not(.oj-navigationlist-icon-only) .oj-navigationlist-item-content {
+  padding: 0.5rem 1.072rem 4px; }
+
 .oj-navigationlist-horizontal:not(.oj-navigationlist-stack-icon-label):not(.oj-navigationlist-icon-only) .oj-navigationlist-item-icon {
   -webkit-align-self: center;
   align-self: center; }
@@ -4020,27 +4034,10 @@ html[dir="rtl"] .oj-navigationlist-page-level.oj-navigationlist-horizontal.oj-na
   overflow: hidden;
   text-overflow: ellipsis; }
 
-.oj-navigationlist-previous-icon {
+.oj-navigationlist-previous-button {
   -webkit-align-self: center;
   align-self: center;
-  padding: 0 7px;
-  border: 1px solid;
-  line-height: 2.286rem;
-  border-color: transparent;
-  border-radius: 2px;
-  color: #878c90; }
-
-/*Override default/hover colors for previous icon*/
-a.oj-navigationlist-previous-link:hover .oj-navigationlist-previous-icon,
-a.oj-navigationlist-previous-link:focus .oj-navigationlist-previous-icon {
-  color: #85bbe7;
-  border-color: #c4ced7;
-  background-color: #f7f8f9; }
-
-a.oj-navigationlist-previous-link:active .oj-navigationlist-previous-icon {
-  color: #ffffff;
-  border-color: #0572ce;
-  background-color: #0572ce; }
+  margin-bottom: 0; }
 
 a.oj-navigationlist-previous-link:active {
   background-color: transparent; }
@@ -4171,7 +4168,7 @@ html:not([dir="rtl"]) .oj-navigationlist-hierarchical-menu .oj-menu-item-icon {
 
 /* Override  default options*/
 .oj-navigationlist-option-defaults {
-  font-family: '{"hierarchyMenuDisplayThresholdLevel":3}'; }
+  font-family: '{"animation":{"add":[{"effect":"expand"},"fadeIn"],"remove":[{"effect":"collapse"},"fadeOut"],"update":{"effect":"fadeIn"},"expand":{"effect":"expand"},"collapse":{"effect":"collapse"},"sliderExpand":{"effect":"slideIn","direction":"start","duration":"400ms"},"sliderCollapse":{"effect":"slideIn","direction":"end","duration":"400ms"},"pointerUp":{"effect":"none"}},"hierarchyMenuDisplayThresholdLevel":3}'; }
 
 /* Styling for the collapse icon */
 /*
@@ -4917,55 +4914,52 @@ oj-dialog:not(.oj-complete) {
   display: -webkit-flex;
   display: flex;
   -webkit-flex-direction: column;
-  flex-direction: column; }
+  flex-direction: column;
+  box-shadow: 1px 1px 10px 0 rgba(0, 0, 0, 0.45);
+  background: #f9f9f9;
+  border: 1px solid #c4ced7;
+  border-radius: 1px; }
 
 .oj-dialog-header {
+  padding: 0.8571rem;
+  background-color: #f0f0f0;
+  border-width: 0 0 1px 0;
+  border-style: solid;
+  border-bottom-color: #c4ced7;
+  font-size: 1.429rem;
+  color: #252525;
+  font-weight: normal;
   position: relative; }
 
-.oj-draggable .oj-dialog-header {
-  cursor: move; }
-
-/* Creates a larger touch area for the close icon */
-.oj-dialog-header-close-wrapper {
-  text-align: center;
-  cursor: default; }
-  html:not([dir="rtl"]) .oj-dialog-header-close-wrapper {
-    float: right; }
-  html[dir="rtl"] .oj-dialog-header-close-wrapper {
-    float: left; }
-
-.oj-dialog-title {
-  overflow: hidden;
-  cursor: default; }
-
+.oj-draggable .oj-dialog-header,
 .oj-draggable .oj-dialog-title {
   cursor: move; }
 
-.oj-dialog-close-icon {
-  border-radius: 2px;
+html:not([dir="rtl"]) .oj-dialog-header-close-wrapper {
+  margin-right: -0.8571rem;
+  float: right; }
+
+html[dir="rtl"] .oj-dialog-header-close-wrapper {
+  margin-left: -0.8571rem;
+  float: left; }
+
+.oj-dialog-header-close-wrapper {
+  margin-bottom: -0.8571rem; }
+
+.oj-dialog-title {
+  display: block;
+  overflow: hidden;
   cursor: default;
-  border-width: 1px;
-  border-style: solid;
-  color: #878c90;
-  border-color: transparent; }
+  -ms-user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none; }
 
-.oj-dialog-header-close-wrapper.oj-hover .oj-dialog-close-icon {
-  background-color: #f7f8f9;
-  border-color: #c4ced7;
-  color: #85bbe7; }
+html:not([dir="rtl"]) .oj-dialog-header-close-wrapper + .oj-dialog-title {
+  padding-right: .2rem; }
 
-.oj-dialog-header-close-wrapper.oj-default .oj-dialog-close-icon,
-.oj-dialog-header-close-wrapper.oj-focus-only .oj-dialog-close-icon {
-  color: #878c90; }
-
-.oj-dialog-header-close-wrapper.oj-focus .oj-dialog-close-icon {
-  outline: dotted 1px black;
-  outline: -webkit-focus-ring-color auto; }
-
-.oj-dialog-header-close-wrapper.oj-active .oj-dialog-close-icon {
-  background-color: #0572ce;
-  border-color: #0572ce;
-  color: #ffffff; }
+html[dir="rtl"] .oj-dialog-header-close-wrapper + .oj-dialog-title {
+  padding-left: .2rem; }
 
 .oj-dialog-content > p:last-child {
   margin-bottom: 0; }
@@ -4980,77 +4974,38 @@ oj-dialog:not(.oj-complete) {
 .oj-dialog-body {
   position: relative;
   overflow: auto;
-  box-sizing: border-box; }
+  box-sizing: border-box;
+  padding: 0.8571rem;
+  text-align: start; }
 
 .oj-dialog-footer-separator {
-  border-width: 1px 0 0;
-  border-style: solid;
-  border-color: #c4ced7; }
+  border-top: 1px solid #c4ced7; }
 
 .oj-dialog-footer {
-  padding-top: 10px;
-  padding-bottom: 6px;
-  padding-right: 10px;
-  padding-left: 10px;
+  display: flex;
+  justify-content: flex-end;
   -webkit-flex: 0 0 auto;
-  flex: 0 0 auto; }
+  flex: 0 0 auto;
+  padding: 0.8571rem; }
   html:not([dir="rtl"]) .oj-dialog-footer {
     text-align: right; }
   html[dir="rtl"] .oj-dialog-footer {
     text-align: left; }
 
-.oj-dialog {
-  top: 0;
-  left: 0;
-  padding: 0;
-  box-shadow: 1px 1px 10px 0 rgba(0, 0, 0, 0.45);
-  background: #f9f9f9;
-  border: 1px solid #c4ced7;
-  border-radius: 1px; }
+.oj-dialog-footer .oj-button {
+  height: 2.286rem;
+  margin-left: 5px; }
 
-.oj-dialog-header {
-  padding: 0.8571rem 0.8571rem 0 0.8571rem;
-  background-color: #f0f0f0;
-  border-width: 0 0 1px 0;
-  border-style: solid;
-  border-color: #c4ced7;
-  font-size: 1.429rem;
-  color: #252525;
-  font-weight: normal;
-  border-radius: 1px 1px 0 0;
-  -webkit-flex: 0 0 auto;
-  flex: 0 0 auto; }
-
-.oj-dialog-header-close-wrapper {
-  padding: 5px;
-  margin: -5px; }
-
-.oj-dialog-title {
-  display: block;
-  padding-bottom: 0.8571rem;
-  -ms-user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  user-select: none; }
-  html:not([dir="rtl"]) .oj-dialog-title {
-    padding-right: 10px; }
-  html[dir="rtl"] .oj-dialog-title {
-    padding-left: 10px; }
-
-.oj-dialog-body {
-  border: 0;
-  padding: 0.8571rem;
-  background: #f9f9f9;
-  color: #333333; }
-
-.oj-dialog:focus, .oj-dialog-header-close-wrapper:focus,
-.oj-dialog-header-close-wrapper:focus .oj-dialog-close-icon {
+.oj-dialog:focus, .oj-dialog-header-close-wrapper:focus {
   outline: none; }
 
 .oj-dialog.oj-focus-highlight,
 .oj-dialog-header-close-wrapper.oj-focus-highlight {
   outline: dotted 1px black;
   outline: -webkit-focus-ring-color auto; }
+
+.oj-dialog-option-defaults {
+  font-family: '{"resizeBehavior":"resizable","cancelBehavior":"icon","dragAffordance":"title-bar"}'; }
 
 /* popup */
 /* --------------------------------------------------------------- */
@@ -5664,7 +5619,7 @@ oj-table:not(.oj-complete) {
 /* Grid display styling for the root component element. */
 .oj-table.oj-table-grid-display {
   border: 1px solid #d6dfe6;
-  background-color: #f7f9fc;
+  background-color: #f8fafd;
   margin: 0; }
 
 /* Styling for the root component element with warning. */
@@ -5696,7 +5651,7 @@ table.oj-table-element {
 
 /* Grid display styling for the header element. */
 .oj-table-grid-display .oj-table-header {
-  background-color: #f2f4f7;
+  background-color: #f1f3f7;
   border-bottom: 1px solid #d6dfe6; }
 
 /* Styling for the header row element. */
@@ -5709,6 +5664,17 @@ table.oj-table-element {
 .oj-table-grid-display .oj-table-header-row,
 .oj-table-editable .oj-table-header-row {
   height: calc(2.286rem + 4px); }
+
+/* Styling for the header row element when table is scrollable. */
+.oj-table-scroll .oj-table-header-row {
+  min-height: 2.75em;
+  height: auto; }
+
+/* Grid display or editable table styling for the header row element when table is scrollable. */
+.oj-table-scroll .oj-table-grid-display .oj-table-header-row,
+.oj-table-scroll .oj-table-editable .oj-table-header-row {
+  min-height: calc(2.286rem + 4px);
+  height: auto; }
 
 /* Styling for the column header elements. */
 .oj-table-column-header-cell {
@@ -5778,12 +5744,12 @@ html[dir="rtl"] .oj-table-column-header-cell.oj-table-vgrid-lines {
 
 /* Styling for the dragged column header element. */
 .oj-table-column-header-cell.oj-drag {
-  background-color: #d3e0ea;
+  background-color: #d4e1ec;
   color: #9e9e9e; }
 
 /* Styling for the column header drag image. */
 .oj-table-column-header-cell-drag-image {
-  border: 1px solid #bcc7d2;
+  border: 1px solid #bbc6d1;
   background-color: #dae9f5; }
 
 /* Styling for the column header drag indicator after a column. */
@@ -6036,7 +6002,7 @@ html[dir="rtl"] .oj-table-grid-display .oj-table-column-header, html[dir="rtl"]
 
 /* Styling for the dragged data cell elements. */
 .oj-table-data-cell.oj-drag {
-  background-color: #f2f4f7;
+  background-color: #f1f3f7;
   color: #9e9e9e; }
 
 /* Styling for the data cell elements in selected state when table focused. */
@@ -6089,7 +6055,7 @@ html[dir="rtl"] .oj-table-grid-display .oj-table-column-header, html[dir="rtl"]
 
 /* Grid display styling for the footer. */
 .oj-table-grid-display .oj-table-footer {
-  background-color: #f2f4f7;
+  background-color: #f1f3f7;
   border-top: 1px solid #d6dfe6; }
 
 /* Styling for the footer row. */
@@ -6101,6 +6067,17 @@ html[dir="rtl"] .oj-table-grid-display .oj-table-column-header, html[dir="rtl"]
 .oj-table-grid-display .oj-table-footer-row,
 .oj-table-editable .oj-table-footer-row {
   height: calc(2.286rem + 4px); }
+
+/* Styling for the footer row when table is scrollable. */
+.oj-table-scroll .oj-table-footer-row {
+  min-height: 2.75em;
+  height: auto; }
+
+/* Grid display or editable table styling for the footer row when table is scrollable. */
+.oj-table-scroll .oj-table-grid-display .oj-table-footer-row,
+.oj-table-scroll .oj-table-editable .oj-table-footer-row {
+  min-height: calc(2.286rem + 4px);
+  height: auto; }
 
 /* Styling for the footer cells. */
 .oj-table-footer-cell {
@@ -6158,7 +6135,7 @@ html[dir="rtl"] .oj-table-grid-display .oj-table-vgrid-lines, html[dir="rtl"]
 
 /* Styling for the status message. */
 .oj-table-status-message {
-  background-color: #f7f9fc;
+  background-color: #f8fafd;
   position: absolute; }
 
 /* Styling for the status message text. */
@@ -6184,7 +6161,7 @@ html[dir="rtl"] .oj-table-grid-display .oj-table-vgrid-lines, html[dir="rtl"]
   border-style: solid;
   border-color: #d6dfe6;
   border-width: 0 1px 1px;
-  background-color: #f7f9fc; }
+  background-color: #f8fafd; }
 
 /* tree */
 /* --------------------------------------------------------------- */
@@ -6364,9 +6341,10 @@ oj-data-grid:not(.oj-complete) {
   -webkit-user-select: none;
   -moz-user-select: none;
   user-select: none;
-  background-color: #f7f9fc;
+  background-color: #f8fafd;
   -webkit-tap-highlight-color: transparent;
-  overflow: hidden; }
+  overflow: hidden;
+  cursor: default; }
 
 /* Styling to remove focus ring border on focusable elements */
 .oj-datagrid:focus,
@@ -6388,7 +6366,7 @@ oj-data-grid:not(.oj-complete) {
 .oj-datagrid-row {
   position: absolute;
   box-sizing: border-box;
-  height: calc(2.286rem + 4px); }
+  height: calc(2.286rem + 1px); }
 
 /* Styling on the row header and row end header containere*/
 .oj-datagrid-row-header,
@@ -6400,27 +6378,41 @@ oj-data-grid:not(.oj-complete) {
 .oj-datagrid-column-end-header {
   box-sizing: border-box; }
 
-/* Style for disabling horizontal gridlines */
-.oj-datagrid-cell.oj-datagrid-border-bottom-none,
-.oj-datagrid-header-cell.oj-datagrid-border-bottom-none,
-.oj-datagrid-end-header-cell.oj-datagrid-border-bottom-none {
-  border-bottom-style: none; }
+/* Style for disabling horizontal gridlines on cells */
+.oj-datagrid-cell.oj-datagrid-border-horizontal-none,
+.oj-datagrid-header-cell.oj-datagrid-border-horizontal-none,
+.oj-datagrid-end-header-cell.oj-datagrid-border-horizontal-none {
+  border-bottom-color: transparent; }
+
+/* Style for disabling horizontal gridlines on corners, is the top border for corners */
+.oj-datagrid-row-header-spacer.oj-datagrid-border-horizontal-none,
+.oj-datagrid-bottom-corner.oj-datagrid-border-horizontal-none {
+  border-top-color: transparent; }
 
 /* Style for disabling vertical gridlines */
 html:not([dir="rtl"]) .oj-datagrid-cell.oj-datagrid-border-vertical-none, html:not([dir="rtl"])
 .oj-datagrid-header-cell.oj-datagrid-border-vertical-none, html:not([dir="rtl"])
 .oj-datagrid-end-header-cell.oj-datagrid-border-vertical-none {
-  border-right-style: none; }
+  border-right-color: transparent; }
 
 html[dir="rtl"] .oj-datagrid-cell.oj-datagrid-border-vertical-none, html[dir="rtl"]
 .oj-datagrid-header-cell.oj-datagrid-border-vertical-none, html[dir="rtl"]
 .oj-datagrid-end-header-cell.oj-datagrid-border-vertical-none {
-  border-left-style: none; }
+  border-left-color: transparent; }
+
+/* Style for disabling vertical gridlines on corners, is the opposite of cell sides */
+html:not([dir="rtl"]) .oj-datagrid-column-header-spacer.oj-datagrid-border-vertical-none, html:not([dir="rtl"])
+.oj-datagrid-bottom-corner.oj-datagrid-border-vertical-none {
+  border-left-color: transparent; }
+
+html[dir="rtl"] .oj-datagrid-column-header-spacer.oj-datagrid-border-vertical-none, html[dir="rtl"]
+.oj-datagrid-bottom-corner.oj-datagrid-border-vertical-none {
+  border-right-color: transparent; }
 
 /* Style for grid border if the grid doesn't fill the container the end headers need a border-bottom */
-.oj-datagrid .oj-datagrid-row-header-spacer.oj-datagrid-small-content-border-bottom,
-.oj-datagrid .oj-datagrid-bottom-corner.oj-datagrid-small-content-border-bottom,
-.oj-datagrid-end-header-cell.oj-datagrid-small-content-border-bottom {
+.oj-datagrid .oj-datagrid-row-header-spacer.oj-datagrid-small-content-border-horizontal,
+.oj-datagrid .oj-datagrid-bottom-corner.oj-datagrid-small-content-border-horizontal,
+.oj-datagrid .oj-datagrid-end-header-cell.oj-datagrid-small-content-border-horizontal {
   border-bottom-width: 1px; }
 
 /* Style for disabling vertical gridlines */
@@ -6441,17 +6433,17 @@ html[dir="rtl"] .oj-datagrid-column-header-spacer.oj-datagrid-small-content-bord
   font-size: 1rem;
   font-weight: normal;
   color: black;
-  background-color: #f2f4f7;
+  background-color: #f1f3f7;
   border-style: solid;
   border-color: #d6dfe6; }
 
 /* Styling on the cells in the column and column end header, the default column header height should be set here*/
 .oj-datagrid-column-header-cell,
 .oj-datagrid-column-end-header-cell {
-  height: calc(2.286rem + 4px);
+  height: calc(2.286rem + 1px);
   box-sizing: border-box;
   text-align: center;
-  padding: 0.5em calc(0.5em + 1px) 0.5em calc(0.5em + 2px); }
+  padding: 0.5em; }
 
 /* Styling on the cells in the column header */
 html:not([dir="rtl"]) .oj-datagrid-column-header-cell {
@@ -6474,7 +6466,7 @@ html[dir="rtl"] .oj-datagrid-column-end-header-cell {
   box-sizing: border-box;
   border-color: #d6dfe6;
   border-style: solid;
-  padding: calc(0.5em + 2px) 0.5em calc(0.5em + 1px) 0.5em; }
+  padding: 0.5em; }
 
 /* Styling on row header cells */
 html:not([dir="rtl"]) .oj-datagrid-row-header-cell {
@@ -6500,42 +6492,61 @@ html[dir="rtl"] .oj-datagrid-row-end-header-cell {
   background-color: #ffffff;
   border-style: solid;
   border-color: #eeeeee;
-  text-overflow: ellipsis; }
+  text-overflow: ellipsis;
+  padding: 0.5em; }
   html:not([dir="rtl"]) .oj-datagrid-cell {
-    padding: calc(0.5em + 2px) calc(0.5em + 1px) calc(0.5em + 1px) calc(0.5em + 2px);
     border-width: 0 1px 1px 0;
     text-align: right; }
   html[dir="rtl"] .oj-datagrid-cell {
-    padding: calc(0.5em + 2px) calc(0.5em + 2px) calc(0.5em + 1px) calc(0.5em + 1px);
     border-width: 0 0 1px 1px;
     text-align: left; }
 
-/* Styling on databody cells when they can be overwritten */
-.oj-datagrid-editable .oj-datagrid-cell.oj-focus,
-.oj-hicontrast .oj-datagrid.oj-datagrid-editable.oj-focus .oj-datagrid-row .oj-datagrid-cell.oj-focus {
-  padding: 0.5em;
+/* Base styling on databody cell outlines when they are focused/edited */
+.oj-datagrid-cell.oj-focus::after,
+.oj-datagrid-header-cell.oj-focus::after,
+.oj-datagrid-end-header-cell.oj-focus::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  top: 0; }
+  html:not([dir="rtl"]) .oj-datagrid-cell.oj-focus::after, html:not([dir="rtl"])
+  .oj-datagrid-header-cell.oj-focus::after, html:not([dir="rtl"])
+  .oj-datagrid-end-header-cell.oj-focus::after {
+    left: 0; }
+  html[dir="rtl"] .oj-datagrid-cell.oj-focus::after, html[dir="rtl"]
+  .oj-datagrid-header-cell.oj-focus::after, html[dir="rtl"]
+  .oj-datagrid-end-header-cell.oj-focus::after {
+    right: 0; }
+
+/* Styling on databody cell outlines when they can be overwritten, to use a background color don't use the after psuedo class */
+.oj-datagrid-editable .oj-datagrid-cell.oj-focus::after,
+.oj-hicontrast .oj-datagrid.oj-datagrid-editable.oj-focus .oj-datagrid-row .oj-datagrid-cell.oj-focus::after {
+  width: calc(100% - 3px);
+  height: calc(100% - 3px);
   border: 2px solid #000000; }
 
 /* Styling on databody cells when they are being edited */
 .oj-datagrid-editable .oj-datagrid-cell.oj-datagrid-cell-edit,
 .oj-hicontrast .oj-datagrid.oj-datagrid-editable.oj-focus .oj-datagrid-row .oj-datagrid-cell.oj-datagrid-cell-edit {
-  padding: 0;
-  border: 1px dotted #000000; }
+  padding: 0; }
+
+/* Styling on databody cell outlines when they are being edited, to use a background color don't use the after psuedo class */
+.oj-datagrid-editable .oj-datagrid-cell.oj-datagrid-cell-edit::after,
+.oj-hicontrast .oj-datagrid.oj-datagrid-editable.oj-focus .oj-datagrid-row .oj-datagrid-cell.oj-datagrid-cell-edit::after {
+  width: calc(100% - 1px);
+  height: calc(100% - 1px);
+  border: 1px solid #000000; }
 
 /* A helper class oj-datagrid-editable-no-padding is a helper to provide the appearance of no padding, it has padding to give the border space when in cellNavigation mode*/
 html:not([dir="rtl"]) .oj-datagrid .oj-datagrid-cell.oj-datagrid-cell-no-padding {
-  padding: 2px 1px 1px 2px; }
+  padding: 1px 0 0 1px; }
 
 html[dir="rtl"] .oj-datagrid .oj-datagrid-cell.oj-datagrid-cell-no-padding {
-  padding: 2px 2px 1px 1px; }
+  padding: 1px 1px 0 0; }
 
 /* A helper class oj-datagrid-cell-no-padding should have padding 0 otherwise*/
 .oj-datagrid-editable .oj-datagrid-cell.oj-datagrid-cell-no-padding {
   padding: 0; }
-
-/* A helper class oj-datagrid-cell-no-padding should have padding 1px to accoun for extra border width*/
-.oj-datagrid-editable .oj-datagrid-cell.oj-datagrid-cell-edit.oj-datagrid-cell-no-padding {
-  padding: 1px; }
 
 /* A helper class oj-datagrid-editable-padding should be appleid to editable components that should maintain padding in edit mode*/
 .oj-datagrid-editable .oj-datagrid-cell.oj-datagrid-cell-edit.oj-datagrid-cell-padding {
@@ -6555,7 +6566,7 @@ html[dir="rtl"] .oj-datagrid .oj-datagrid-cell.oj-datagrid-cell-no-padding {
 .oj-datagrid-cell.oj-form-control-inherit .oj-combobox .oj-combobox-choice,
 .oj-datagrid-cell.oj-form-control-inherit .oj-combobox .oj-combobox-choices,
 .oj-datagrid-cell.oj-form-control-inherit .oj-inputdatetime .oj-inputdatetime-input {
-  padding: 0 calc(0.5em + 1px); }
+  padding: 0 0.5em 2px 0.5em; }
 
 .oj-datagrid-cell .oj-checkboxset .oj-checkbox-label {
   justify-content: flex-end; }
@@ -6614,24 +6625,42 @@ html[dir="rtl"] .oj-datagrid .oj-datagrid-cell.oj-datagrid-cell-no-padding {
 .oj-datagrid-row .oj-datagrid-cell.oj-selected {
   background-color: #fafaeb; }
 
-/* Styling on focused row and cell */
-.oj-datagrid.oj-focus .oj-datagrid-row.oj-focus .oj-datagrid-cell,
-.oj-datagrid.oj-focus .oj-datagrid-row .oj-datagrid-cell.oj-focus {
-  background-color: #cfe8fc; }
+/* Styling on focused row and cell outlines, to use a background color don't use the after psuedo class */
+.oj-datagrid.oj-focus.oj-read-only .oj-datagrid-row.oj-focus-highlight .oj-datagrid-cell::after,
+.oj-datagrid.oj-focus.oj-read-only .oj-datagrid-row .oj-datagrid-cell.oj-focus-highlight::after,
+.oj-datagrid.oj-focus .oj-datagrid-header-cell.oj-focus-highlight::after,
+.oj-datagrid.oj-focus .oj-datagrid-end-header-cell.oj-focus-highlight::after {
+  top: 1px;
+  width: calc(100% - 1px);
+  height: calc(100% - 1px);
+  outline: dotted 1px black;
+  outline: -webkit-focus-ring-color auto; }
+  html:not([dir="rtl"]) .oj-datagrid.oj-focus.oj-read-only .oj-datagrid-row.oj-focus-highlight .oj-datagrid-cell::after, html:not([dir="rtl"])
+  .oj-datagrid.oj-focus.oj-read-only .oj-datagrid-row .oj-datagrid-cell.oj-focus-highlight::after, html:not([dir="rtl"])
+  .oj-datagrid.oj-focus .oj-datagrid-header-cell.oj-focus-highlight::after, html:not([dir="rtl"])
+  .oj-datagrid.oj-focus .oj-datagrid-end-header-cell.oj-focus-highlight::after {
+    left: 1px; }
+  html[dir="rtl"] .oj-datagrid.oj-focus.oj-read-only .oj-datagrid-row.oj-focus-highlight .oj-datagrid-cell::after, html[dir="rtl"]
+  .oj-datagrid.oj-focus.oj-read-only .oj-datagrid-row .oj-datagrid-cell.oj-focus-highlight::after, html[dir="rtl"]
+  .oj-datagrid.oj-focus .oj-datagrid-header-cell.oj-focus-highlight::after, html[dir="rtl"]
+  .oj-datagrid.oj-focus .oj-datagrid-end-header-cell.oj-focus-highlight::after {
+    right: 1px; }
+
+.oj-datagrid.oj-focus .oj-datagrid-column-end-header-cell.oj-focus-highlight::after {
+  height: calc(100% - 2px); }
+
+.oj-datagrid.oj-focus .oj-datagrid-row-end-header-cell.oj-focus-highlight::after {
+  width: calc(100% - 2px); }
+
+/* Styling on focused cell outlines that require and offset for their outline */
+.oj-focus-highlight.oj-datagrid-focus-offset::after {
+  outline-offset: -2px; }
 
 /* Styling for the data cell elements in selected state when data grid in high contrast mode. */
 .oj-hicontrast .oj-datagrid.oj-focus .oj-datagrid-row.oj-selected .oj-datagrid-cell,
 .oj-hicontrast .oj-datagrid.oj-focus .oj-datagrid-cell.oj-selected {
-  border-width: 1px 2px 2px 1px;
-  border-style: solid; }
-
-/* Styling for the data cell elements in focus state when data grid in high contrast mode. */
-.oj-hicontrast .oj-datagrid.oj-focus .oj-datagrid-row.oj-focus .oj-datagrid-cell,
-.oj-hicontrast .oj-datagrid.oj-focus .oj-datagrid-row .oj-datagrid-cell.oj-focus {
-  outline-width: 1px;
-  outline-style: dotted;
-  border-width: 0 1px 1px 0;
-  border-style: dotted; }
+  border-width: 3px;
+  border-style: double; }
 
 /* Styling on header containers, used for positioning*/
 .oj-datagrid-header,
@@ -6667,19 +6696,6 @@ html[dir="rtl"] .oj-datagrid .oj-datagrid-cell.oj-datagrid-cell-no-padding {
 .oj-datagrid-end-header-cell.oj-hover {
   background-color: #d6d7d8; }
 
-/* Styling on header cells when focus both for rows and columns */
-.oj-datagrid.oj-focus .oj-datagrid-header-cell.oj-focus,
-.oj-datagrid.oj-focus .oj-datagrid-end-header-cell.oj-focus {
-  background-color: #b8dfff; }
-
-/* Styling on header cells when focus both for rows and columns */
-.oj-hicontrast .oj-datagrid.oj-focus .oj-datagrid-header-cell.oj-focus,
-.oj-hicontrast .oj-datagrid.oj-focus .oj-datagrid-end-header-cell.oj-focus {
-  outline-width: 1px;
-  outline-style: dotted;
-  border-width: 0 1px 1px 0;
-  border-style: dotted; }
-
 /* Styling on the status text, such as fetching data */
 .oj-datagrid-status {
   position: absolute;
@@ -6713,7 +6729,7 @@ html[dir="rtl"] .oj-datagrid-top-corner {
 
 /* Styling for the corner between scrollbars if present */
 .oj-datagrid-bottom-corner {
-  background-color: #f7f9fc; }
+  background-color: #f8fafd; }
   html:not([dir="rtl"]) .oj-datagrid-bottom-corner {
     border-width: 1px 0 0 1px; }
   html[dir="rtl"] .oj-datagrid-bottom-corner {
@@ -6748,12 +6764,12 @@ html[dir="rtl"] .oj-datagrid-column-header-spacer {
 
 /* Styling for the gradient for sort icons in the header */
 html:not([dir="rtl"]) .oj-datagrid-sort-icon-container.oj-enabled {
-  background-image: -webkit-linear-gradient(left, rgba(242, 244, 247, 0), #f2f4f7 40%);
-  background-image: linear-gradient(to right, rgba(242, 244, 247, 0), #f2f4f7 40%); }
+  background-image: -webkit-linear-gradient(left, rgba(241, 243, 247, 0), #f1f3f7 40%);
+  background-image: linear-gradient(to right, rgba(241, 243, 247, 0), #f1f3f7 40%); }
 
 html[dir="rtl"] .oj-datagrid-sort-icon-container.oj-enabled {
-  background-image: -webkit-linear-gradient(right, rgba(242, 244, 247, 0), #f2f4f7 40%);
-  background-image: linear-gradient(to left, rgba(242, 244, 247, 0), #f2f4f7 40%); }
+  background-image: -webkit-linear-gradient(right, rgba(241, 243, 247, 0), #f1f3f7 40%);
+  background-image: linear-gradient(to left, rgba(241, 243, 247, 0), #f1f3f7 40%); }
 
 /* Styling for the gradient for sort icons on hover in the header */
 html:not([dir="rtl"]) .oj-hover .oj-datagrid-sort-icon-container {
@@ -6763,17 +6779,6 @@ html:not([dir="rtl"]) .oj-hover .oj-datagrid-sort-icon-container {
 html[dir="rtl"] .oj-hover .oj-datagrid-sort-icon-container {
   background-image: -webkit-linear-gradient(right, rgba(214, 215, 216, 0), #d6d7d8 40%);
   background-image: linear-gradient(to left, rgba(214, 215, 216, 0), #d6d7d8 40%); }
-
-/* Styling for the gradient for sort icons on hover in an focused header */
-html:not([dir="rtl"]) .oj-datagrid.oj-focus .oj-datagrid-header-cell.oj-hover.oj-focus .oj-datagrid-sort-icon-container, html:not([dir="rtl"])
-.oj-datagrid.oj-focus .oj-datagrid-header-cell.oj-focus .oj-datagrid-sort-icon-container.oj-enabled {
-  background-image: -webkit-linear-gradient(left, rgba(184, 223, 255, 0), #b8dfff 40%);
-  background-image: linear-gradient(to right, rgba(184, 223, 255, 0), #b8dfff 40%); }
-
-html[dir="rtl"] .oj-datagrid.oj-focus .oj-datagrid-header-cell.oj-hover.oj-focus .oj-datagrid-sort-icon-container, html[dir="rtl"]
-.oj-datagrid.oj-focus .oj-datagrid-header-cell.oj-focus .oj-datagrid-sort-icon-container.oj-enabled {
-  background-image: -webkit-linear-gradient(right, rgba(184, 223, 255, 0), #b8dfff 40%);
-  background-image: linear-gradient(to left, rgba(184, 223, 255, 0), #b8dfff 40%); }
 
 /* Styling for both the sort icons and click area */
 html:not([dir="rtl"]) .oj-datagrid-sort-ascending-icon, html:not([dir="rtl"])
@@ -6886,7 +6891,16 @@ oj-row-expander:not(.oj-complete) {
 .oj-rowexpander-expand-icon,
 .oj-rowexpander-collapse-icon,
 .oj-rowexpander-lazyload-icon {
-  font-size: 1em; }
+  font-size: 1em;
+  outline: none; }
+
+/* Focus border for highlighted icons */
+.oj-rowexpander-leaf-icon.oj-focus-highlight,
+.oj-rowexpander-expand-icon.oj-focus-highlight,
+.oj-rowexpander-collapse-icon.oj-focus-highlight,
+.oj-rowexpander-lazyload-icon.oj-focus-highlight {
+  outline: dotted 1px black;
+  outline: -webkit-focus-ring-color auto; }
 
 /* Data grid specific absolute icon positioning */
 .oj-datagrid .oj-rowexpander-leaf-icon,
@@ -7045,24 +7059,32 @@ ul.oj-listview-element:not(.oj-listview-card-layout) .oj-listview-item.oj-hover 
   background-color: #fafaeb; }
 
 /* Styling on focused list or group item */
-.oj-listview-item.oj-focus,
-.oj-listview-group-item.oj-focus {
-  outline-width: 1px;
-  outline-style: dotted;
-  outline-offset: -1px; }
+.oj-listview-item.oj-focus-highlight,
+.oj-listview-group-item.oj-focus-highlight {
+  position: relative; }
+
+.oj-listview-item.oj-focus-highlight::after,
+.oj-listview-group-item.oj-focus-highlight::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  top: 1px;
+  width: calc(100% - 2px);
+  height: calc(100% - 1px);
+  outline: dotted 1px black;
+  outline: -webkit-focus-ring-color auto; }
+  html:not([dir="rtl"]) .oj-listview-item.oj-focus-highlight::after, html:not([dir="rtl"])
+  .oj-listview-group-item.oj-focus-highlight::after {
+    left: 1px; }
+  html[dir="rtl"] .oj-listview-item.oj-focus-highlight::after, html[dir="rtl"]
+  .oj-listview-group-item.oj-focus-highlight::after {
+    right: 1px; }
 
 /* Styling on focused list item */
-.oj-listview.oj-focus-ancestor .oj-listview-item.oj-focus {
-  background-color: #cfe8fc; }
-
 .oj-listview.oj-focus-ancestor ul.oj-listview-element:not(.oj-listview-card-layout) .oj-listview-item.oj-focus,
 .oj-listview.oj-focus-ancestor ul.oj-listview-element:not(.oj-listview-card-layout) .oj-listview-item.oj-focus + li.oj-listview-item {
   border-top: 1px solid #eeeeee;
   background-size: 0; }
-
-/* Styling on focused group item */
-.oj-listview.oj-focus-ancestor .oj-listview-group-item.oj-focus {
-  background-color: #f0f0f0; }
 
 /* Styling for the list item elements in selected state when listview is in high contrast mode. */
 .oj-hicontrast .oj-listview-item.oj-selected,
@@ -7072,8 +7094,8 @@ ul.oj-listview-element:not(.oj-listview-card-layout) .oj-listview-item.oj-hover 
   border-color: initial; }
 
 /* Styling for the list item elements in focus state when listview is in high contrast mode. */
-.oj-hicontrast .oj-listview-item.oj-focus,
-.oj-hicontrast .oj-listview-group-item.oj-focus {
+.oj-hicontrast .oj-listview-item.oj-focus-highlight,
+.oj-hicontrast .oj-listview-group-item.oj-focus-highlight {
   outline-width: 2px;
   outline-style: dotted;
   border-width: 0 1px 1px 0;
@@ -7107,6 +7129,11 @@ ul.oj-listview-element:not(.oj-listview-card-layout) .oj-listview-item.oj-hover 
   background-color: transparent;
   background-image: none; }
 
+/* Styling for group item element that is pinned when scrolled */
+.oj-listview-group-item.oj-pinned {
+  position: absolute;
+  z-index: 1; }
+
 /* expand and collapse animation */
 .oj-listview-collapsible-transition {
   overflow: hidden; }
@@ -7123,7 +7150,8 @@ ul.oj-listview-element:not(.oj-listview-card-layout) .oj-listview-item.oj-hover 
 /* Styling for the empty list text */
 .oj-listview-no-data-message {
   padding: 0.8571rem;
-  background-color: #ffffff; }
+  background-color: #ffffff;
+  min-height: 1rem; }
 
 /* Alignment for the expand and collapse icons */
 .oj-listview-expand-icon,
@@ -7189,6 +7217,10 @@ ul.oj-listview-element:not(.oj-listview-card-layout) .oj-listview-item.oj-hover 
   .oj-listview-drag-handle:before {
     content: url("images/move_handle.svg"); }
 
+.oj-listview-drag-handle::before {
+  width: inherit;
+  height: inherit; }
+
 /* Styling for the affordance icon when card layout is used */
 /* Styling for the drag image */
 .oj-listview-drag-image {
@@ -7196,6 +7228,10 @@ ul.oj-listview-element:not(.oj-listview-card-layout) .oj-listview-item.oj-hover 
   position: fixed;
   top: 10000px;
   border: 1px solid transparent; }
+
+/* Styling for hiding the original item being dragged */
+.oj-listview-drag-item {
+  display: none; }
 
 /* Styling item that is draggable (no affordance) */
 .oj-listview-item.oj-draggable {
@@ -7207,10 +7243,14 @@ ul.oj-listview-element:not(.oj-listview-card-layout) .oj-listview-item.oj-hover 
   border-top: 1px solid transparent;
   border-bottom: 1px solid transparent; }
 
-/* Styling all drop targets in the datagrid when dragging rows*/
+/* Styling all drop targets in the list */
 .oj-listview-item.oj-drop {
   box-sizing: border-box;
   border: 1px solid #c2eaf3;
+  background-color: #D9F4FA; }
+
+/* Styling on empty list as drop targets in the list */
+.oj-listview-empty-text.oj-drop {
   background-color: #D9F4FA; }
 
 /* Styling for an item that is cut during a context menu cut operation */
@@ -7527,6 +7567,27 @@ oj-diagram:not(.oj-complete) {
   font-size: 1rem;
   color: #333333; }
 
+.oj-diagram .oj-active-drop {
+  fill: #D9F4FA;
+  fill-opacity: .75; }
+
+.oj-diagram .oj-invalid-drop {
+  cursor: no-drop; }
+
+.oj-diagram-node.oj-active-drop {
+  fill: #D9F4FA;
+  fill-opacity: .75; }
+
+.oj-diagram-node.oj-invalid-drop {
+  cursor: no-drop; }
+
+.oj-diagram-link.oj-active-drop {
+  stroke: #D9F4FA;
+  stroke-opacity: .75; }
+
+.oj-diagram-link.oj-invalid-drop {
+  cursor: no-drop; }
+
 oj-gantt:not(.oj-complete) {
   visibility: hidden; }
 
@@ -7542,7 +7603,7 @@ oj-gantt:not(.oj-complete) {
 
 /* Styling for the container (around time axis and databody) */
 .oj-gantt-container {
-  fill: #f7f9fc;
+  fill: #f8fafd;
   stroke: #d6dfe6;
   stroke-width: 1px; }
 
@@ -7565,6 +7626,11 @@ oj-gantt:not(.oj-complete) {
 .oj-gantt-row {
   fill: #ffffff; }
 
+/* Styling for all row labels */
+.oj-gantt-row-label {
+  fill: #252525;
+  font-size: 1rem; }
+
 /* Styling for all task bars */
 .oj-gantt-task {
   fill: #267db3; }
@@ -7573,18 +7639,22 @@ oj-gantt:not(.oj-complete) {
 .oj-gantt-task.oj-hover {
   stroke-width: 2; }
 
+/* Styling for all task bars when focus */
+.oj-gantt-task.oj-focus {
+  stroke-width: 2; }
+
 /* Styling for all task bars when selected */
 .oj-gantt-task.oj-selected {
   stroke: #000000; }
 
 /* Styling for all task labels */
 .oj-gantt-task-label {
-  font-size: 0.857rem;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif; }
+  color: black;
+  font-size: 0.857rem; }
 
 /* Styling for the major time axis */
 .oj-gantt-major-axis {
-  fill: #f5f7f9;
+  fill: #f4f6f8;
   stroke: #d6dfe6; }
 
 /* Styling for the major time axis labels */
@@ -7599,7 +7669,7 @@ oj-gantt:not(.oj-complete) {
 
 /* Styling for the minor time axis */
 .oj-gantt-minor-axis {
-  fill: #f5f7f9;
+  fill: #f4f6f8;
   stroke: #d6dfe6; }
 
 /* Styling for the minor time axis labels */
@@ -7611,6 +7681,37 @@ oj-gantt:not(.oj-complete) {
 /* Styling for the minor time axis separators */
 .oj-gantt-minor-axis-separator {
   stroke: #d6dfe6; }
+
+/* Styling for reference object */
+.oj-gantt-reference-object {
+  stroke: #ff591f; }
+
+/* Styling for the tooltip label */
+.oj-gantt-tooltip-label {
+  font-size: 0.857rem;
+  color: #666666;
+  padding: 0 2px;
+  white-space: nowrap; }
+  html:not([dir="rtl"]) .oj-gantt-tooltip-label {
+    text-align: right; }
+  html[dir="rtl"] .oj-gantt-tooltip-label {
+    text-align: left; }
+
+/* Styling for the tooltip value */
+.oj-gantt-tooltip-value {
+  color: #333333;
+  padding: 0 2px; }
+  html:not([dir="rtl"]) .oj-gantt-tooltip-value {
+    text-align: left; }
+  html[dir="rtl"] .oj-gantt-tooltip-value {
+    text-align: right; }
+
+/* Styling for the default tabular tooltip */
+.oj-gantt-tooltip-content {
+  display: block;
+  border-collapse: separate;
+  border-spacing: 2px;
+  overflow: hidden; }
 
 /* Styling for the zoom in icon */
 .oj-gantt-zoomin-icon {
@@ -7643,6 +7744,21 @@ oj-gantt:not(.oj-complete) {
 
 .oj-gantt-zoomout-icon.oj-disabled {
   background-image: url("../common/images/dvt/common/func_minus_16_dis.png"); }
+
+/* Styling for all dependency lines */
+.oj-gantt-dependency-line {
+  fill: none;
+  stroke: #4f4f4f;
+  stroke-width: 1; }
+
+/* Styling for all dependency lines when focus */
+.oj-gantt-dependency-line.oj-focus {
+  stroke-width: 3; }
+
+/* Styling for all dependency line connectors */
+.oj-gantt-dependency-line-connector {
+  fill: #4f4f4f;
+  stroke: #4f4f4f; }
 
 oj-dial-gauge:not(.oj-complete) {
   visibility: hidden; }
@@ -8103,18 +8219,6 @@ oj-timeline:not(.oj-complete) {
   white-space: nowrap;
   font-size: 0.857rem;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif; }
-
-.oj-timeline-scroll-indicator-back {
-  background-image: url("../common/images/dvt/timeline/scroll_l.png"); }
-
-.oj-timeline-scroll-indicator-forward {
-  background-image: url("../common/images/dvt/timeline/scroll_r.png"); }
-
-.oj-timeline-scroll-indicator-up {
-  background-image: url("../common/images/dvt/timeline/scroll_t.png"); }
-
-.oj-timeline-scroll-indicator-down {
-  background-image: url("../common/images/dvt/timeline/scroll_b.png"); }
 
 .oj-timeline-zoomin-icon {
   background-image: url("../common/images/dvt/common/func_plus_16_ena.png");
@@ -9185,7 +9289,7 @@ oj-calendar:not(.oj-complete) {
   /* use a width of 100% and then max and min width so that when 
          there's less room for the form control it can automatically 
          get smaller instead of overflowing its boundaries */
-  max-width: 302px;
+  max-width: 277px;
   min-width: 8em;
   width: 100%; }
 
@@ -9325,7 +9429,7 @@ html[dir="rtl"] .oj-inputdatetime.oj-invalid .oj-inputdatetime-input-trigger, ht
   padding: 0; }
 
 .oj-datepicker-wrapper {
-  padding-bottom: 10px; }
+  padding-bottom: 15px; }
 
 /* Class for the root node that contains the floating calendar */
 .oj-datepicker-content {
@@ -9336,7 +9440,7 @@ html[dir="rtl"] .oj-inputdatetime.oj-invalid .oj-inputdatetime-input-trigger, ht
     direction: rtl; }
 
 .oj-datepicker-header {
-  margin: 10px 10px 0;
+  margin: 15px 15px 0;
   position: relative;
   background: none;
   border: 0;
@@ -9345,7 +9449,7 @@ html[dir="rtl"] .oj-inputdatetime.oj-invalid .oj-inputdatetime-input-trigger, ht
 .oj-datepicker-prev-icon,
 .oj-datepicker-next-icon {
   position: absolute;
-  line-height: 40px; }
+  line-height: 35px; }
 
 html:not([dir="rtl"]) .oj-datepicker-prev-icon {
   left: 2px; }
@@ -9361,7 +9465,8 @@ html[dir="rtl"] .oj-datepicker-next-icon {
 
 .oj-datepicker-title {
   margin: 0 2.2em;
-  line-height: 40px;
+  height: 35px;
+  line-height: 35px;
   text-align: center; }
 
 .oj-datepicker-title select {
@@ -9397,7 +9502,7 @@ html[dir="rtl"] .oj-datepicker-next-icon {
 
 .oj-datepicker-calendar {
   border-collapse: collapse;
-  margin: 0 10px;
+  margin: 0 15px;
   outline: 0 none; }
 
 .oj-datepicker-calendar th,
@@ -9406,7 +9511,8 @@ html[dir="rtl"] .oj-datepicker-next-icon {
   text-align: center; }
 
 .oj-datepicker-calendar th {
-  padding: .7em .3em;
+  padding: 0;
+  height: 35px;
   text-transform: uppercase;
   font-weight: normal;
   color: #878c90; }
@@ -9420,29 +9526,35 @@ html[dir="rtl"] .oj-datepicker-next-icon {
   padding: 0;
   border-radius: 50%;
   box-sizing: border-box;
-  width: 40px;
-  height: 40px;
-  line-height: 36px;
+  width: 35px;
+  height: 35px;
+  line-height: 31px;
   text-align: center; }
 
 .oj-datepicker-calendar.oj-datepicker-weekdisplay td span,
 .oj-datepicker-calendar.oj-datepicker-weekdisplay td a {
-  width: 35px;
-  height: 35px;
-  line-height: 31px; }
+  width: 30.625px;
+  height: 30.625px;
+  line-height: 26.625px; }
+
+.oj-datepicker-calendar.oj-datepicker-monthview,
+.oj-datepicker-calendar.oj-datepicker-yearview {
+  /* Take up space on right and bottom to make it same size as day view */
+  margin-right: 35px;
+  margin-bottom: 5px; }
 
 .oj-datepicker-calendar.oj-datepicker-monthview td,
 .oj-datepicker-calendar.oj-datepicker-yearview td {
-  width: 93.3333333333px; }
+  padding: 8px 3px 3px 23px; }
 
 .oj-datepicker-calendar.oj-datepicker-monthview td span,
 .oj-datepicker-calendar.oj-datepicker-monthview td a,
 .oj-datepicker-calendar.oj-datepicker-yearview td span,
 .oj-datepicker-calendar.oj-datepicker-yearview td a {
-  margin: 0 auto;
-  width: 50px;
-  height: 50px;
-  line-height: 46px; }
+  width: 49px;
+  height: 49px;
+  line-height: 45px;
+  white-space: nowrap; }
 
 .oj-datepicker-calendar td a:focus {
   outline: none; }
@@ -9476,10 +9588,10 @@ html[dir="rtl"] .oj-datepicker-next-icon {
 
 .oj-datepicker-buttonpane {
   box-sizing: border-box;
-  height: 40px;
+  height: 35px;
   font-size: 18px;
   text-align: center;
-  line-height: 40px;
+  line-height: 35px;
   display: inline-block;
   width: 100%; }
   html[dir="rtl"] .oj-datepicker-buttonpane {
@@ -9538,7 +9650,8 @@ html[dir="rtl"] .oj-datepicker-multi .oj-datepicker-group-last .oj-datepicker-he
   border: 2px solid #85bae7; }
 
 .oj-datepicker-week-col {
-  color: #666666; }
+  color: #666666;
+  width: 30.625px; }
 
 th.oj-datepicker-week-col {
   background-color: #fafafa; }
@@ -9552,6 +9665,184 @@ td.oj-datepicker-week-col {
 .oj-datepicker-inline .oj-datepicker-content {
   background-color: #ffffff;
   border: 1px solid #d6dfe6; }
+
+.oj-timepicker-popup .oj-popup-content {
+  padding: 0; }
+
+.oj-timepicker-content {
+  position: relative;
+  padding: 15px;
+  min-width: 275px;
+  box-sizing: border-box; }
+
+.oj-timepicker-header,
+.oj-timepicker-footer {
+  color: #0572ce;
+  font-size: 18px;
+  height: 35px;
+  line-height: 35px;
+  background: none;
+  border: 0; }
+
+.oj-timepicker-header {
+  position: relative; }
+
+.oj-timepicker-cancel-button {
+  position: absolute; }
+  html:not([dir="rtl"]) .oj-timepicker-cancel-button {
+    left: 0; }
+  html[dir="rtl"] .oj-timepicker-cancel-button {
+    right: 0; }
+
+.oj-timepicker-ok-button {
+  position: absolute; }
+  html:not([dir="rtl"]) .oj-timepicker-ok-button {
+    right: 0; }
+  html[dir="rtl"] .oj-timepicker-ok-button {
+    left: 0; }
+
+.oj-timepicker-footer {
+  box-sizing: border-box;
+  text-align: center;
+  display: inline-block;
+  width: 100%; }
+
+.oj-timepicker-header a.oj-enabled,
+.oj-timepicker-footer a.oj-enabled {
+  text-decoration: none;
+  color: #0572ce; }
+
+.oj-timepicker-header a.oj-enabled.oj-hover,
+.oj-timepicker-footer a.oj-enabled.oj-hover {
+  color: #85bbe7; }
+
+.oj-timepicker-header a.oj-enabled.oj-active,
+.oj-timepicker-footer a.oj-enabled.oj-active {
+  color: #0572ce; }
+
+.oj-timepicker-wheel-group {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-justify-content: center;
+  justify-content: center;
+  width: 100%;
+  padding: 15px 0; }
+
+.oj-timepicker-wheel {
+  position: relative;
+  height: 215px;
+  width: 79px;
+  overflow: hidden;
+  box-sizing: border-box;
+  outline: 0; }
+
+.oj-timepicker-wheel.oj-timepicker-minute,
+.oj-timepicker-wheel.oj-timepicker-meridian {
+  margin-left: 4px; }
+
+.oj-timepicker-wheel-item {
+  transition: all 0.15s;
+  top: -100px;
+  position: absolute;
+  opacity: 0;
+  width: 79px;
+  text-align: center;
+  color: #0572ce;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-justify-content: center;
+  justify-content: center; }
+
+.oj-timepicker-wheel-item.oj-disabled {
+  color: #9e9e9e; }
+
+.oj-timepicker-wheel-item-content {
+  text-align: center;
+  white-space: nowrap; }
+
+.oj-timepicker-wheel.oj-focus .oj-timepicker-wheel-item.oj-timepicker-wheel-item-position0 {
+  border-radius: 2px;
+  background-color: #e4f0fa;
+  color: black; }
+
+.oj-timepicker-wheel.oj-active .oj-timepicker-wheel-item.oj-timepicker-wheel-item-position1,
+.oj-timepicker-wheel.oj-active .oj-timepicker-wheel-item.oj-timepicker-wheel-item-position2,
+.oj-timepicker-wheel.oj-active .oj-timepicker-wheel-item.oj-timepicker-wheel-item-position-1,
+.oj-timepicker-wheel.oj-active .oj-timepicker-wheel-item.oj-timepicker-wheel-item-position-2 {
+  opacity: 1; }
+
+.oj-timepicker-wheel-item.oj-timepicker-wheel-item-position0 {
+  font-size: 46px;
+  height: 54px;
+  top: 78px;
+  opacity: 1; }
+
+.oj-timepicker-wheel-item.oj-timepicker-wheel-item-position1,
+.oj-timepicker-wheel-item.oj-timepicker-wheel-item-position-1 {
+  font-size: 34px;
+  height: 40px; }
+
+.oj-timepicker-wheel-item.oj-timepicker-wheel-item-position2,
+.oj-timepicker-wheel-item.oj-timepicker-wheel-item-position-2 {
+  font-size: 24px;
+  height: 30px; }
+
+.oj-timepicker-wheel-item {
+  height: 20px; }
+
+.oj-timepicker-meridian .oj-timepicker-wheel-item.oj-timepicker-wheel-item-position0:lang(el),
+.oj-timepicker-meridian .oj-timepicker-wheel-item.oj-timepicker-wheel-item-position0:lang(ja),
+.oj-timepicker-meridian .oj-timepicker-wheel-item.oj-timepicker-wheel-item-position0:lang(ko),
+.oj-timepicker-meridian .oj-timepicker-wheel-item.oj-timepicker-wheel-item-position0:lang(zh) {
+  font-size: 38px; }
+
+.oj-timepicker-meridian .oj-timepicker-wheel-item:lang(el),
+.oj-timepicker-meridian .oj-timepicker-wheel-item:lang(ja),
+.oj-timepicker-meridian .oj-timepicker-wheel-item:lang(ko),
+.oj-timepicker-meridian .oj-timepicker-wheel-item:lang(zh) {
+  font-size: 28px; }
+
+.oj-timepicker-meridian .oj-timepicker-wheel-item.oj-timepicker-wheel-item-position0:lang(hi) {
+  font-size: 24px; }
+
+.oj-timepicker-meridian .oj-timepicker-wheel-item:lang(hi) {
+  font-size: 18px; }
+
+.oj-timepicker-meridian .oj-timepicker-wheel-item.oj-timepicker-wheel-item-position0:lang(sq) {
+  font-size: 16px; }
+
+.oj-timepicker-meridian .oj-timepicker-wheel-item:lang(sq) {
+  font-size: 14px; }
+
+.oj-timepicker-wheel-item.oj-timepicker-wheel-item-position1 {
+  top: 136px; }
+
+.oj-timepicker-wheel-item.oj-timepicker-wheel-item-position2 {
+  top: 180px; }
+
+.oj-timepicker-wheel-item.oj-timepicker-wheel-item-position3,
+.oj-timepicker-wheel-item.oj-timepicker-wheel-item-position4,
+.oj-timepicker-wheel-item.oj-timepicker-wheel-item-position5,
+.oj-timepicker-wheel-item.oj-timepicker-wheel-item-position6,
+.oj-timepicker-wheel-item.oj-timepicker-wheel-item-position7 {
+  top: 214px;
+  visibility: hidden; }
+
+.oj-timepicker-wheel-item.oj-timepicker-wheel-item-position-1 {
+  top: 34px; }
+
+.oj-timepicker-wheel-item.oj-timepicker-wheel-item-position-2 {
+  top: 0; }
+
+.oj-timepicker-wheel-item.oj-timepicker-wheel-item-position-3,
+.oj-timepicker-wheel-item.oj-timepicker-wheel-item-position-4,
+.oj-timepicker-wheel-item.oj-timepicker-wheel-item-position-5,
+.oj-timepicker-wheel-item.oj-timepicker-wheel-item-position-6,
+.oj-timepicker-wheel-item.oj-timepicker-wheel-item-position-7 {
+  top: -24px;
+  visibility: hidden; }
 
 .oj-form-control-inherit .oj-inputdatetime .oj-inputdatetime-input {
   text-align: inherit;
@@ -10910,10 +11201,6 @@ oj-slider:not(.oj-complete) {
   display: inline-block;
   position: relative;
   box-sizing: border-box;
-  /* This ensures that the slider bounding box will include
-   the thumb radius - important for form controls. */
-  padding-left: 12px;
-  padding-right: 12px;
   -webkit-touch-callout: none;
   -ms-user-select: none;
   -webkit-user-select: none;
@@ -10933,6 +11220,12 @@ oj-slider:not(.oj-complete) {
   min-width: 8em;
   width: 100%; }
 
+.oj-slider.oj-slider-horizontal {
+  /* This ensures that the slider bounding box will include
+   the thumb radius - important for form controls. */
+  padding-left: 12px;
+  padding-right: 12px; }
+
 .oj-slider.oj-slider-vertical {
   padding-left: 12px;
   padding-right: 12px; }
@@ -10951,7 +11244,7 @@ oj-slider:not(.oj-complete) {
   height: 2.286rem; }
 
 .oj-slider-vertical.oj-form-control .oj-slider-container {
-  height: 100%;
+  height: 150px;
   min-height: 48px; }
 
 .oj-slider-container {
@@ -11137,6 +11430,83 @@ html[dir="rtl"] .oj-slider-horizontal .oj-slider-range-max {
 
 .oj-slider-block-item {
   text-align: center; }
+
+.oj-slider-color-picker.oj-slider-horizontal {
+  /* This ensures that the slider bounding box will include
+   the thumb radius - important for form controls. */
+  padding-left: 14px;
+  padding-right: 14px; }
+
+.oj-slider-color-picker.oj-slider-vertical {
+  padding-left: 14px;
+  padding-right: 14px; }
+
+.oj-slider-color-picker.oj-slider-vertical > .oj-slider-container {
+  margin-top: 14px;
+  margin-bottom: 14px; }
+
+.oj-slider-color-picker.oj-slider-vertical.oj-form-control .oj-slider-container {
+  min-height: 56px; }
+
+.oj-slider-color-picker .oj-slider-thumb {
+  background-color: transparent;
+  border-width: 2px;
+  border-radius: 50%; }
+
+.oj-slider-color-picker .oj-slider-bar {
+  border-radius: 8px; }
+
+.oj-slider-color-picker.oj-slider-horizontal .oj-slider-bar, .oj-slider-color-picker.oj-slider-horizontal .oj-slider-bar-value {
+  height: 8px;
+  margin-top: -4px; }
+
+.oj-slider-color-picker.oj-slider-vertical .oj-slider-bar, .oj-slider-color-picker.oj-slider-vertical .oj-slider-bar-value {
+  width: 8px;
+  margin-left: -4px; }
+
+.oj-slider-color-picker .oj-slider-bar:after {
+  top: -14px;
+  bottom: -14px;
+  left: -14px;
+  right: -14px; }
+
+.oj-slider-color-picker .oj-slider-bar-value {
+  border-radius: 8px; }
+
+.oj-slider-color-picker.oj-slider-horizontal .oj-slider-thumb {
+  width: 28px;
+  height: 28px;
+  margin-top: -14px;
+  margin-left: -14px; }
+
+.oj-slider-color-picker.oj-slider-vertical .oj-slider-thumb {
+  width: 28px;
+  height: 28px;
+  margin-bottom: -14px;
+  margin-top: -14px; }
+  html:not([dir="rtl"]) .oj-slider-color-picker.oj-slider-vertical .oj-slider-thumb {
+    margin-left: -14px; }
+  html[dir="rtl"] .oj-slider-color-picker.oj-slider-vertical .oj-slider-thumb {
+    margin-right: -14px; }
+
+.oj-slider-color-picker.oj-slider-horizontal .oj-slider-thumb:after {
+  left: 0;
+  right: 0; }
+
+.oj-slider-color-picker.oj-slider-vertical .oj-slider-thumb:after {
+  left: 0;
+  right: 0; }
+
+.oj-slider-color-picker.oj-slider-horizontal .oj-slider-thumb:after {
+  top: 0;
+  bottom: 0; }
+
+.oj-slider-color-picker.oj-slider-vertical .oj-slider-thumb:after {
+  top: 0;
+  bottom: 0; }
+
+.oj-slider-color-picker .oj-slider-bar-value {
+  display: none; }
 
 /* Grid HTML Classes */
 .oj-flex {

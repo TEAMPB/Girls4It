@@ -1,6 +1,6 @@
 {
   "name": "oraclejet",
-  "version": "2.1.0",
+  "version": "2.3.0",
   "description": "Oracle JET distribution",
   "authors": [
     "Oracle"
@@ -29,15 +29,16 @@
     "requirejs": "2.1.16",
     "text": "2.0.12",
     "proj4": "2.3.14",
-    "require-css": "0.1.8"
+    "require-css": "0.1.8",
+    "webcomponentsjs": "0.7.22"
   },
-  "_release": "2.1.0",
+  "_release": "2.3.0",
   "_resolution": {
     "type": "version",
-    "tag": "2.1.0",
-    "commit": "fe8f0dc714193d01c22e9d6ca11fc84ac0a1e9ac"
+    "tag": "2.3.0",
+    "commit": "7d52f609494635eb8182e874e1f8af01aeae7856"
   },
   "_source": "https://github.com/oracle/oraclejet.git",
-  "_target": "2.1.0",
+  "_target": "~2.3.0",
   "_originalSource": "oraclejet"
 }

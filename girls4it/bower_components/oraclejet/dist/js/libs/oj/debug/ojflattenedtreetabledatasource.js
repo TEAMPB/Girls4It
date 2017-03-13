@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates.
  * The Universal Permissive License (UPL), Version 1.0
  */
 "use strict";
@@ -82,7 +82,7 @@ oj.FlattenedTreeTableDataSource = function(data, options)
       {
         self._nodeSetList[j]['startIndex'] = self._nodeSetList[j]['startIndex'] + 1;
       }
-      rowArray.push(self._wrapWritableValue(rowIdx, row));
+      rowArray.push(self._wrapWritableValue(row));
       keyArray.push(rowKey);
       indexArray.push(rowIdx);
       self._rows['data'].splice(rowIdx, 0, row);
@@ -99,17 +99,16 @@ oj.FlattenedTreeTableDataSource = function(data, options)
     var rowArray = [];
     var keyArray = [];
     var indexArray = [];
-    for (i = 0; i < rowKeys.length; i++)
+    for (i = rowKeys.length - 1; i >= 0; i--)
     {
-      // indices shift down as we remove
-      rowIdx = rowKeys[i].index - i;
+      rowIdx = rowKeys[i]['index'];
       // just create a dummy row for deletion
       rowArray.push('');
       keyArray.push('');
       indexArray.push(rowIdx);
       self._nodeSetList.splice(rowIdx, 1);
       // update the startIndex of the shifted rows
-      for (j = rowIdx + 1; j < self._nodeSetList.length; j++)
+      for (j = rowIdx; j < self._nodeSetList.length; j++)
       {
         self._nodeSetList[j]['startIndex'] = self._nodeSetList[j]['startIndex'] - 1;
       }
@@ -117,6 +116,8 @@ oj.FlattenedTreeTableDataSource = function(data, options)
       self._rows['keys'].splice(rowIdx, 1);
       self._rows['indexes'].splice(rowIdx, 1);
     }
+    // The index array must be sorted ascending
+    indexArray = indexArray.sort();
     self._realignRowIndices();
     self._hasMore = true;
     oj.TableDataSource.superclass.handleEvent.call(self, oj.TableDataSource.EventType['REMOVE'], {'data': rowArray, 'keys': keyArray, 'indexes': indexArray});
@@ -297,7 +298,7 @@ oj.FlattenedTreeTableDataSource.prototype.get = function(id, options)
   // only works for expanded keys
   var rowIdx = this._data.getIndex(Object(id));
   var row = this._rows['data'][rowIdx];
-  var wrappedRow = this._wrapWritableValue(rowIdx, row);
+  var wrappedRow = this._wrapWritableValue(row);
   var result = {'data': wrappedRow, 'key': id, 'index': rowIdx};
   
   return Promise.resolve(result);
@@ -470,11 +471,12 @@ oj.FlattenedTreeTableDataSource.prototype._fetchInternal = function(options)
         endIndex = oj.FlattenedTreeTableDataSource._getEndIndex(this._rows, this._startIndex, this._pageSize);
         var rowArray = [];
         var keyArray = [];
-        var i;
+        var i, key;
         for (i = this._startIndex; i <= endIndex; i++)
         {
-          rowArray[i - this._startIndex] = this._wrapWritableValue(i, this._rows['data'][i]);
-          keyArray[i - this._startIndex] = this._rows['keys'][i];
+          key = this._rows['keys'][i];
+          rowArray[i - this._startIndex] = this._wrapWritableValue(this._rows['data'][i]);
+          keyArray[i - this._startIndex] = key;
         }
         var result = {'data': rowArray, 'keys': keyArray, 'startIndex': this._startIndex};
         this._endFetch(options, result, null);
@@ -511,11 +513,12 @@ oj.FlattenedTreeTableDataSource.prototype._fetchInternal = function(options)
         var endIndex = oj.FlattenedTreeTableDataSource._getEndIndex(self._rows, self._startIndex, self._pageSize);
         var rowArray = [];
         var keyArray = [];
-        var i;
+        var i, key;
         for (i = self._startIndex; i <= endIndex; i++)
         {
-          rowArray[i - self._startIndex] = self._wrapWritableValue(i, self._rows['data'][i]);
-          keyArray[i - self._startIndex] = self._rows['keys'][i];
+          key = self._rows['keys'][i];
+          rowArray[i - self._startIndex] = self._wrapWritableValue(self._rows['data'][i]);
+          keyArray[i - self._startIndex] = key;
         }
         // if there are results then we potentially have more
         if (rowArray.length > 0)
@@ -630,35 +633,32 @@ oj.FlattenedTreeTableDataSource.prototype._realignRowIndices = function()
   }
 };
 
-oj.FlattenedTreeTableDataSource.prototype._wrapWritableValue = function(index, m)
+oj.FlattenedTreeTableDataSource.prototype._wrapWritableValue = function(m)
 {
   var clonedRow = $.extend(true, {}, m);
-  var self = this;
-  var prop;
+  var i, props = Object.keys(m);
   
-  for (prop in clonedRow)
+  for (i = 0; i < props.length; i++)
   {
-    if (clonedRow.hasOwnProperty(prop))
-    {
-      (function()
-      {
-        var localIndex = index;
-        var localProp = prop;
-        Object.defineProperty(clonedRow, prop,
-          {
-            get: function()
-            {
-              return self._rows['data'][localIndex][localProp];
-            },
-            set: function(newValue)
-            {
-              self._rows['data'][localIndex][localProp] = newValue;
-            }
-          });
-      })();
-    }
+    oj.FlattenedTreeTableDataSource._defineProperty(clonedRow, m, props[i]);
   }
   
   return clonedRow;
+};
+
+oj.FlattenedTreeTableDataSource._defineProperty = function(row, m, prop)
+{
+  Object.defineProperty(row, prop,
+    {
+      get: function()
+      {
+        return m[prop];
+      },
+      set: function(newValue)
+      {
+        m[prop] = newValue;
+      },
+      enumerable: true
+    });
 };
 });

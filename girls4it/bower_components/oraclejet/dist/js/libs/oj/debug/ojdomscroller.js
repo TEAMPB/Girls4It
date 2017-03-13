@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates.
  * The Universal Permissive License (UPL), Version 1.0
  */
 "use strict";
@@ -254,7 +254,9 @@ oj.DomScroller.prototype._fetchNext = function(options)
     this._currentStartIndex = this._currentStartIndex + pageSize;
   }
     
-  if (this._data.totalSize() == -1 || this._data.totalSize() > this._currentStartIndex)
+  if (this._data.totalSize() == -1 || 
+      !this._isTotalSizeConfidenceActual() ||
+      (this._isTotalSizeConfidenceActual() && this._data.totalSize() > this._currentStartIndex))
   {
     var self = this;
     return new Promise(function(resolve, reject)
@@ -286,6 +288,52 @@ oj.DomScroller.prototype._handleDataSync = function(event)
   }
 }
 
+oj.DomScroller.prototype._handleDataRowEventFunc = function(eventType)
+{
+  return function(event)
+  {
+    event = event || {};
+    var eventIndexes = event['indexes'];
+    var i, eventIndexesCount = eventIndexes.length;
+    for (i = 0; i < eventIndexesCount; i++)
+    {
+      var rowIdx = eventIndexes[i];
+
+      // we only care if the row is in our range
+      if (rowIdx !== undefined &&
+          this._rowCount > 0 &&
+          rowIdx <= this._rowCount)
+      {
+        if (eventType == oj.TableDataSource.EventType['ADD'])
+        {
+          this._rowCount = this._rowCount + 1;
+        }
+        else if (eventType == oj.TableDataSource.EventType['REMOVE'])
+        {
+          this._rowCount = this._rowCount - 1;
+        }
+      }
+    }
+  };
+};
+
+/**
+ * Check if the totalSize confidence is "actual"
+ * @return {boolean} true or false
+ * @private
+ */
+oj.DomScroller.prototype._isTotalSizeConfidenceActual = function()
+{
+  var data = this._data;
+
+  if (data != null && data.totalSizeConfidence() == "actual")
+  {
+    return true;
+  }
+
+  return false;
+};
+
 /**
  * Register event listeners which need to be registered datasource. 
  * @private
@@ -303,6 +351,8 @@ oj.DomScroller.prototype._registerDataSourceEventListeners = function()
     this._dataSourceEventHandlers.push({'eventType': oj.TableDataSource.EventType['REFRESH'], 'eventHandler': this._handleDataReset.bind(this)});
     this._dataSourceEventHandlers.push({'eventType': oj.TableDataSource.EventType['RESET'], 'eventHandler': this._handleDataReset.bind(this)});
     this._dataSourceEventHandlers.push({'eventType': oj.TableDataSource.EventType['SYNC'], 'eventHandler': this._handleDataSync.bind(this)});
+    this._dataSourceEventHandlers.push({'eventType': oj.TableDataSource.EventType['ADD'], 'eventHandler': this._handleDataRowEventFunc(oj.TableDataSource.EventType['ADD']).bind(this)});
+    this._dataSourceEventHandlers.push({'eventType': oj.TableDataSource.EventType['REMOVE'], 'eventHandler': this._handleDataRowEventFunc(oj.TableDataSource.EventType['REMOVE']).bind(this)});
 
     var i;
     var ev;

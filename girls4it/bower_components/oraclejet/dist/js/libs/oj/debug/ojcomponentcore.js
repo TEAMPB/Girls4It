@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates.
  * The Universal Permissive License (UPL), Version 1.0
  */
 "use strict";
@@ -26,17 +26,17 @@ oj.Components = {};
  * by the following example:
  * <pre>
  * {
- *   'default': // properties for all JET components 
+ *   'default': // properties for all JET components
  *   {
  *     'option1': 'somevalue'
  *   },
- *   'editableValue': // properties for editableValue components 
+ *   'editableValue': // properties for editableValue components
  *   {
  *     'option1': 'somevalue1',
  *     'option2': oj.Components.createDynamicPropertyGetter(function(context){
  *                                 return context['containers'].indexOf('ojTable') >= 0 ? 'tableValue' : 'normalValue'})
  *   },
- *   'ojText': // properties for instances of ojText 
+ *   'ojText': // properties for instances of ojText
  *   {
  *     'option1': 'somevalue2'
  *   }
@@ -50,9 +50,9 @@ oj.Components = {};
 oj.Components.setDefaultOptions = function(options)
 {
   var props = oj.Components._defaultProperties || {};
-  
+
   var keys = Object.keys(options);
-  
+
   keys.forEach(function(key)
     {
       var value = options[key];
@@ -63,7 +63,7 @@ oj.Components.setDefaultOptions = function(options)
       props[key] = _accumulateValues(props[key]||{}, value, false);
     }
   );
-  
+
   oj.Components._defaultProperties = props;
 };
 
@@ -90,7 +90,7 @@ oj.Components.getDefaultOptions = function()
  * <li>element - component's host DOM element</li>
  * </ul>
  * The callback should return the computed property value
- * 
+ *
  * @return {Object} - dynamic property getter
  * @see oj.Components.setDefaultOptions
  * @export
@@ -102,12 +102,12 @@ oj.Components.createDynamicPropertyGetter = function(callback)
 
 /**
  * Retrieves widget constructor associated with the HTML element
- * or null if none is found. The returned constructor is already bound to the associated 
+ * or null if none is found. The returned constructor is already bound to the associated
  * JQuery element, so it can be invoked as a function directly. For example:
  * <pre>
  * widgetConstructor("option", "label", "custom"); // sets label option
  * </pre>
- * If widgetName is not specified, and if more than one widget is associated with the element, 
+ * If widgetName is not specified, and if more than one widget is associated with the element,
  * the method will a return the widget that was created first.
  * @param {Element} element - HTML element
  * @param {string=} widgetName - optional widget name
@@ -117,19 +117,19 @@ oj.Components.createDynamicPropertyGetter = function(callback)
 oj.Components.getWidgetConstructor = function(element, widgetName)
 {
   var jelem = $(element);
-  
+
   var data = jelem.data(_OJ_WIDGET_NAMES_DATA);
   if (data)
   {
     if (widgetName == null)
     {
-      widgetName = data[0]; 
+      widgetName = data[0];
     }
     else if (data.indexOf(widgetName) < 0)
     {
       widgetName = undefined;
     }
-    
+
     if (widgetName != null)
     {
       var func = jelem[widgetName];
@@ -139,7 +139,7 @@ oj.Components.getWidgetConstructor = function(element, widgetName)
       }
     }
   }
-  
+
   return null;
 };
 
@@ -148,7 +148,7 @@ oj.Components.getWidgetConstructor = function(element, widgetName)
  * into the document programmatically.
  *
  * Note that there is no need to call this method when the new DOM is being inserted by the template engine
- * in Knockout.js 
+ * in Knockout.js
  * @param {!Element} node - the root of the subtree
  * @see oj.Components.subtreeDetached
  * @export
@@ -167,9 +167,9 @@ oj.Components.subtreeAttached = function(node)
 /**
  * Notifies JET framework that a subtree possibly containing JET components has been removed
  * from the document programmatically.
- * 
- * Note that calling this method is not needs after calling JQuery's .remove() because all JET components would have been 
- * already destroyed in that case. Similarly, there is no need to call this method after the subtree has been removed by 
+ *
+ * Note that calling this method is not needs after calling JQuery's .remove() because all JET components would have been
+ * already destroyed in that case. Similarly, there is no need to call this method after the subtree has been removed by
  * Knockout.js
  * @param {!Element} node - the root of the subtree
  * @see oj.Components.subtreeAttached
@@ -189,7 +189,7 @@ oj.Components.subtreeDetached = function(node)
  * Notifies JET framework that a subtree possibly containing JET components is no longer hidden with display:none style
  * This method should be called by the application if the 'display' style is being changed from 'hidden' programmatically,
  * such as when JQuery's .show() method is called
- * 
+ *
  * @param {!Element} node - the root of the subtree
  * @see oj.Components.subtreeHidden
  * @export
@@ -197,7 +197,7 @@ oj.Components.subtreeDetached = function(node)
 oj.Components.subtreeShown = function(node)
 {
   oj.DomUtils.fixResizeListeners(node);
-  
+
   _applyToComponents(node,
     function(instance)
     {
@@ -209,9 +209,9 @@ oj.Components.subtreeShown = function(node)
 
 /**
  * Notifies JET framework that a subtree possibly containing JET components has been hidden  with display:none style
- * This method should be called by the application after the subtree has been hidden programmatically, such as 
+ * This method should be called by the application after the subtree has been hidden programmatically, such as
  * when JQuery's .hide() method is called.
- * 
+ *
  * @param {!Element} node - the root of the subtree
  * @see oj.Components.subtreeShown
  * @export
@@ -238,13 +238,13 @@ oj.Components.subtreeHidden = function(node)
  */
 oj.Components.isComponentInitialized = function(jelement, widgetName)
 {
-  /** @type {?} */ 
+  /** @type {?} */
   var widgets = jelement.data(_OJ_WIDGET_NAMES_DATA);
   if ($.isArray(widgets) && widgets.indexOf(widgetName) > -1 && jelement.is('.' + _OJ_COMPONENT_NODE_CLASS))
     return true;
   else
     return false;
-}
+};
 
 /**
  * @ignore
@@ -253,7 +253,7 @@ oj.Components.__getDefaultOptions = function(hierarchyNames)
 {
   var defaults = {};
   var allProperties =  oj.Components.getDefaultOptions();
-  
+
   for (var i=hierarchyNames.length-1; i>=0; i--)
   {
     var name = hierarchyNames[i];
@@ -265,14 +265,129 @@ oj.Components.__getDefaultOptions = function(hierarchyNames)
   }
 
   return defaults;
-}
+};
+
+/**
+ * Retrieves the JET component element that
+ * the node is in.
+ * @param {Node|null} node - DOM node
+ * @return {Node|null} componentElement - JET component element
+ * A component element is the DOM element on which the JET component is
+ * initialized. It could be a custom element, composite element or a JQueryUI
+ * element. The static methods take a component element, figure out what type it
+ * is and then uses the appropriate syntax to make the specified method or property
+ * call.
+ * @export
+*/
+oj.Components.getComponentElementByNode = function(node)
+{ 
+  if (node == null){
+    return null;
+  }
+  if (node.getAttribute('data-oj-internal')){
+    return oj.Components.getComponentElementByNode(node.parentNode);
+  }
+  if (_isComponentElement(node)){
+    return node;
+  }
+  if (node.classList.contains('oj-component')){
+    node = $(node).find('.oj-component-initnode').not('[data-oj-internal]')[0] || node;
+    if (oj.Components.getWidgetConstructor(node)){
+      return node;
+    }
+  }
+  return oj.Components.getComponentElementByNode(node.parentNode);
+};
+
+/**
+ * Retrieves the subId of the node as
+ * as part of a locator object i.e. at least
+ * {subId: subIdOfNode}
+ * @param {Element} componentElement - JET component element
+ * @param {Element} node - DOM node
+ * @return {*} locator - object with at least a subId
+ * or null if the node does not have a subId
+ * @export
+*/
+oj.Components.getSubIdByNode = function(componentElement, node)
+{
+  return oj.Components.callComponentMethod(componentElement, 'getSubIdByNode', node);
+};
+
+/**
+ * Returns the component DOM node indicated
+ * by the locator parameter.
+ * @param {Element} componentElement - JET component element
+ * @param {Object} locator - Object containing, at minimum,
+ * a subId property, whose value is a string that identifies
+ * a particular DOM node in this component.
+ * @return {*} node - The DOM node located by
+ * the locator, or null if none is found
+ * @export
+*/
+oj.Components.getNodeBySubId = function(componentElement, locator)
+{
+  return oj.Components.callComponentMethod(componentElement, 'getNodeBySubId', locator);
+};
+
+/**
+ * Retrieves the specified option of
+ * the specified JET component element
+ * @param {Element} componentElement - JET component element
+ * @param {string} option - option to retrieve
+ * @return {*} value of option
+ * @export
+*/
+oj.Components.getComponentOption = function(componentElement, option)
+{ 
+  if (!_isComponentElement(componentElement)){
+    throw new Error('node is not a component element');
+  } else {
+    return oj.Components.getWidgetConstructor(componentElement)('option', option);
+  }
+};
+
+/**
+ * Sets the specified option of the specified
+ * JET component element to the specified value
+ * @param {Element} componentElement - JET component element
+ * @param {string} option - option to set
+ * @param {*} value - value to set option to
+ * @export
+*/
+oj.Components.setComponentOption = function(componentElement, option, value)
+{ 
+  if (!_isComponentElement(componentElement)){
+    throw new Error('node is not a component element');
+  } else {
+    oj.Components.getWidgetConstructor(componentElement)('option', option, value);
+  }
+};
+
+/**
+ * Calls the specified JET component element's method
+ * with the given arguments
+ * @param {Element} componentElement - JET component element
+ * @param {string} method - name of JET component element method to call
+ * @param {...*} methodArguments - list of arguments to pass to method call
+ * @return {*}
+ * @export
+*/
+oj.Components.callComponentMethod = function(componentElement, method, methodArguments)
+{
+  if (!_isComponentElement(componentElement)){
+    throw new Error('node is not a component element');
+  } else {
+    return oj.Components.getWidgetConstructor(componentElement).apply($(componentElement), [].slice.call(arguments, 1));
+  }
+};
 
 /**
  * @private
  */
 function _applyToComponents(subtreeRoot, callback)
 {
-  var processFunc = function() 
+  var processFunc = function()
   {
     var jelem =  $(this);
     var names = jelem.data(_OJ_WIDGET_NAMES_DATA);
@@ -288,15 +403,15 @@ function _applyToComponents(subtreeRoot, callback)
       }
     }
   };
-  
+
   var locator = $(subtreeRoot);
-  
+
   // Include the root node itself, and not just children ()
   if (locator.hasClass(_OJ_COMPONENT_NODE_CLASS))
   {
     processFunc.call(subtreeRoot);
   }
-  
+
   locator.find('.' + _OJ_COMPONENT_NODE_CLASS).each(processFunc);
 }
 
@@ -315,12 +430,12 @@ function __ojDynamicGetter(callback)
 };
 
 /**
- * @ignore 
+ * @ignore
  */
 function _accumulateValues(target, source, valueInArray)
-{ 
+{
   var keys = Object.keys(source);
-  
+
   keys.forEach(function(key)
     {
       var holder = target[key] || [];
@@ -338,6 +453,14 @@ function _accumulateValues(target, source, valueInArray)
   );
   return target;
 }
+
+/**
+ * @ignore
+ */
+ function _isComponentElement(node)
+ {
+  return oj.Components.getWidgetConstructor(node);
+ }
 
 /**
  * @private
@@ -1196,7 +1319,7 @@ $.widget('oj.' + _BASE_COMPONENT,
 
     // namespace facilitates removing contextMenu handlers separately, if app clears the "contextMenu" option
     this.contextMenuEventNamespace = this.eventNamespace + "contextMenu";
-    this._setupContextMenu(true);
+    this._setupContextMenu(true, null);
   },
 
   /**
@@ -1651,7 +1774,7 @@ $.widget('oj.' + _BASE_COMPONENT,
 
     this._super();
 
-    this._removeContextMenuBehavior();
+    this._removeContextMenuBehavior(this.options.contextMenu);
 
     //remove hover and active listeners
 //    this.widget().off(this.eventNamespace);
@@ -1867,7 +1990,6 @@ $.widget('oj.' + _BASE_COMPONENT,
   {
     var originalValue = this.options[key];
 
-
     if (key === "disabled" )
     {
       // The JQUI superclass method has hard-coded style classes in the 'if key === "disabled"' block, so unfortunately
@@ -1908,7 +2030,7 @@ $.widget('oj.' + _BASE_COMPONENT,
       }
 
       if ( key === "contextMenu" )
-        this._setupContextMenu(false);
+        this._setupContextMenu(false, originalValue);
     }
 
     this._optionChanged(key, value, originalValue, flags);
@@ -2073,9 +2195,9 @@ $.widget('oj.' + _BASE_COMPONENT,
    * @instance
    * @private
    */
-  _setupContextMenu: function(isCreateTime)
+  _setupContextMenu: function(isCreateTime, oldContextMenuOption)
   {
-    this._removeContextMenuBehavior();
+    this._removeContextMenuBehavior(oldContextMenuOption);
 
     if ( this.options.contextMenu )
     {
@@ -2207,7 +2329,7 @@ $.widget('oj.' + _BASE_COMPONENT,
 
             // if _NotifyContextMenuGesture() (or subclass override of it) actually opened the CM, and if that launch wasn't
             // cancelled by a beforeOpen listener...
-            if (self._getContextMenuNode().is(":visible"))
+            if (menu.widget().is(":visible"))
             {
                 event.preventDefault(); // don't show native context menu
                 document.addEventListener("keyup", self._preventKeyUpEventIfMenuOpen);
@@ -2305,32 +2427,6 @@ $.widget('oj.' + _BASE_COMPONENT,
     }
   },
 
-  /**
-   * <p>Sets the ivars used by _getContextMenu() and _getContextMenuNode().  These 2 _ivars should be set/cleared in lockstep.
-   *
-   * <p>This method should be called only by those 2 methods.
-   *
-   * @memberof oj.baseComponent
-   * @instance
-   * @throws if no Menu found, which is app error since Menu should be inited by the time this is called
-   * @private
-   */
-  _setContextMenuIvars: function()
-  {
-    // JQ obj containing the menu element.  Empty if no element found.
-    this._contextMenuNode = $(this.options.contextMenu).first();
-
-    // Menu component.  undefined if _contextMenuNode empty, or if its one node has no JET Menu.
-    this._contextMenu = this._contextMenuNode.data( "oj-ojMenu" );
-
-    if (!this._contextMenu)
-        throw new Error('"contextMenu" option set to "' + this.options.contextMenu + '", which does not reference a valid JET Menu.');
-
-    var self = this;
-    this._contextMenuNode.on( "ojclose" + this.contextMenuEventNamespace , function( event, ui ) {
-        document.removeEventListener("keyup", self._preventKeyUpEventIfMenuOpen);
-    });
-  },
 
   /**
    * <p>Lazy getter for the context menu.
@@ -2350,18 +2446,32 @@ $.widget('oj.' + _BASE_COMPONENT,
    */
   _getContextMenu: function()
   {
-    if (!this._contextMenu)
-        this._setContextMenuIvars();
+    var constructor = oj.Components.getWidgetConstructor(this._getContextMenuNode()[0], "ojMenu");
 
-    return this._contextMenu;
+    // The JET Menu of the first element found.
+    // Per architect discussion, get it every time rather than caching the menu.
+    var contextMenu = constructor && constructor("instance");
+
+    // if no element found, or if element has no JET Menu
+    if (!contextMenu)
+      throw new Error('"contextMenu" option set to "' + this.options.contextMenu + '", which does not reference a valid JET Menu.');
+
+    if (!this._contextMenuListenerSet) {
+      var self = this;
+
+      // must use "on" syntax rather than clobbering whatever "close" handler the app may have set via the menu's "option" syntax
+      contextMenu.widget().on( "ojclose" + this.contextMenuEventNamespace , function( event, ui ) {
+        document.removeEventListener("keyup", self._preventKeyUpEventIfMenuOpen);
+      });
+
+      this._contextMenuListenerSet = true;
+    }
+
+    return contextMenu;
   },
 
   /**
-   * <p>All _getContextMenu doc applies to this method too, except this method returns
-   * the menu node, not the menu itself.
-   *
-   * @return the root DOM node of the JET Menu
-   * @throws if no Menu found, which is app error since Menu should be inited by the time this is called
+   * @return JQ obj containing the DOM node referenced by the contextMenu option.  Empty if no element found.
    *
    * @memberof oj.baseComponent
    * @instance
@@ -2369,20 +2479,17 @@ $.widget('oj.' + _BASE_COMPONENT,
    */
   _getContextMenuNode: function()
   {
-    if (!this._contextMenuNode)
-        this._setContextMenuIvars();
-
-    return this._contextMenuNode;
+    return $(this.options.contextMenu).first();
   },
 
   /**
-   * <p>This method removes contextMenu functionality from the component.
+   * <p>This method removes contextMenu functionality from the component and specified menu.
    *
    * @memberof oj.baseComponent
    * @instance
    * @private
    */
-  _removeContextMenuBehavior: function()
+  _removeContextMenuBehavior: function(contextMenuOption)
   {
     this.widget()
         .removeAttr( "contextmenu" )
@@ -2390,14 +2497,13 @@ $.widget('oj.' + _BASE_COMPONENT,
         .removeClass("oj-menu-context-menu-launcher")
         [0].removeEventListener("click", this._clickListener, true);
 
-    this._contextMenuNode && this._contextMenuNode.off( this.contextMenuEventNamespace );
-
     // the other 2 contextMenu timeouts don't need to be cleared here
     clearTimeout(this._contextMenuPressHoldTimer);
 
-    // set/unset these ivars in lockstep
-    this._contextMenu = undefined;
-    this._contextMenuNode = undefined;
+    // access menu elem directly, rather than using the widget() of the Menu component, so listener is cleared even if component no longer exists.
+    $(contextMenuOption).off( this.contextMenuEventNamespace );
+    this._contextMenuListenerSet = false;
+
   },
 
   /**

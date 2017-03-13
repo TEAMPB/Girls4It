@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates.
  * The Universal Permissive License (UPL), Version 1.0
  */
 "use strict";
@@ -872,13 +872,6 @@ define(['ojs/ojcore', 'jquery', 'ojs/ojeditablevalue', 'jqueryui-amd/widgets/dra
       // copy all style properties from the input tag to the enclosing
       // slider div (sliderWrapper)
       this._sliderContainer[0].style.cssText = this._styleFromInputTag;
-      //
-      // If the height is not set on a vertical slider,
-      // Apply a 150px default height.
-      //
-      if (this._isVertical() && this._sliderContainer[0].style.height === '') {
-        this._sliderContainer[0].style.height = '150px';
-      }
     },
 
     _createBarBackground: function () {

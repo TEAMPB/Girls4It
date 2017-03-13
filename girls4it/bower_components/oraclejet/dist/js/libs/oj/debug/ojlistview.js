@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates.
  * The Universal Permissive License (UPL), Version 1.0
  */
 "use strict";
@@ -717,6 +717,22 @@ oj.TableDataSourceContentHandler.prototype._removeDataSourceEventListeners = fun
 };
 
 /**
+ * Checks whether loading indicator should be appended to the end of the list
+ * @param {Object} results fetch result set
+ * @return {boolean} whether loading indicator should be appended to the end of list
+ * @private
+ */
+oj.TableDataSourceContentHandler.prototype._shouldAppendLoadingIndicator = function(results)
+{
+    // checks if it's highwatermark scroling and there are results and the total size is either unknown or
+    // more than the size of the result set
+    return this._isLoadMoreOnScroll() && 
+           results != null && 
+           results['keys'] && results['keys'].length > 0 &&
+           (this.m_dataSource.totalSize() == -1 || this.m_dataSource.totalSize() > results['keys'].length);
+};
+
+/**
  * @param {boolean} forceFetch
  * @override
  */
@@ -775,10 +791,13 @@ oj.TableDataSourceContentHandler.prototype.fetchRows = function(forceFetch)
                                  $(self.m_root).empty();
 
                                  self._handleFetchedData(value); 
-                                 // initial fetch we'll append the loading indicator at the end (for highwatermark scrolling)
-                                 if (self._isLoadMoreOnScroll() && value != null && value['keys'] && value['keys'].length > 0)
+                                 // append loading indicator at the end as needed
+                                 if (self._shouldAppendLoadingIndicator(value))
                                  {
                                      self._appendLoadingIndicator();
+
+                                     // check scroll position again since loading indicator added space to scroll
+                                     self.m_widget.syncScrollPosition();
                                  }
                              }}, 
                          function(reason){ 
@@ -1913,9 +1932,17 @@ oj._ojListView = _ListViewUtils.clazz(Object,
             },
             "mousedown": function(event)
             {
-                if (event.button === 0 && !self._recentTouch())
+                if (event.button === 0)
                 {
-                    self.HandleMouseDownOrTouchStart(event);
+                    if (!self._recentTouch())
+                    {
+                        self.HandleMouseDownOrTouchStart(event);
+                    }
+                }
+                else
+                {
+                    // on right click we should prevent focus from shifting to first item
+                    self.m_preActive = true;
                 }
             },
             "mouseup": function(event)
@@ -1935,36 +1962,33 @@ oj._ojListView = _ListViewUtils.clazz(Object,
             {
                 self.HandleKeyDown(event);
             },
-            "focus": function(event)
-            {
-                self.HandleFocus(event);
-            },
-            "blur": function(event)
-            {
-                self.HandleBlur(event);
-            },
             "ojpanmove": function(event)
             {
                 self._handleMouseUpOrPanMove(event);
             }
         });
-
-        // in Firefox, first tab will focus on the list container
+        this.ojContext._on(this.ojContext.element, {
+          "focus": function(event)
+          {
+              self.HandleFocus(event);
+          },
+          "blur": function(event)
+          {
+              self.HandleBlur(event);
+          },
+        });
+        
+        // in Firefox, need to explicitly make list container not focusable otherwise first tab will focus on the list container
         if (oj.AgentUtils.getAgentInfo()['browser'] === oj.AgentUtils.BROWSER.FIREFOX)
         {
-            this.ojContext._on(this._getListContainer(), {
-                "focus": function(event) 
-                {
-                    self.element.focus();
-                }
-            });
+            this._getListContainer().attr("tabIndex", -1);
         }
 
         // for item focus mode (aka roving focus), we'll need to use focusout handler instead
         // of blur because blur doesn't bubble
         if (this.GetFocusMode() === this.FOCUS_MODE_ITEM)
         {
-            this.ojContext._on(this.element, {
+            this.ojContext._on(this.ojContext.element, {
                 "focusin": function(event)
                 {
                     self.HandleFocus(event);
@@ -2091,6 +2115,7 @@ oj._ojListView = _ListViewUtils.clazz(Object,
 
         this.m_active = null;
         this.m_isExpandAll = null;
+        this.m_disclosing = null;
 
         this.readinessStack = [];
         this.readyPromise = new Promise(function(resolve, reject)
@@ -2099,6 +2124,16 @@ oj._ojListView = _ListViewUtils.clazz(Object,
         });
 
         this.ClearCache();
+    },
+
+    /**
+     * Called when listview root element is re-attached to DOM tree.
+     * Invoke by widget
+     */
+    notifyAttached: function()
+    {
+        // restore scroll position as needed since some browsers reset scroll position 
+        this.syncScrollPosition();
     },
 
     /**
@@ -2128,6 +2163,9 @@ oj._ojListView = _ListViewUtils.clazz(Object,
      */
     notifyShown: function()
     {
+        // restore scroll position as needed since some browsers reset scroll position 
+        this.syncScrollPosition();
+
         // call ContentHandler in case action is neccessarily
         if (this.m_contentHandler != null)
         {
@@ -2375,7 +2413,7 @@ oj._ojListView = _ListViewUtils.clazz(Object,
      */
     ShouldApplyHighlight: function()
     {
-        return false;
+        return true;
     },
     /**
      * check Whether recent pointer acivity happened or not. 
@@ -2412,7 +2450,7 @@ oj._ojListView = _ListViewUtils.clazz(Object,
      */
     setOptions: function(options, flags)
     { 
-        var self, elem, expanded, selection, i;
+        var self, elem, expanded, active, scroller, pos;
 
         if (this.ShouldRefresh(options))
         {
@@ -2441,6 +2479,9 @@ oj._ojListView = _ListViewUtils.clazz(Object,
             // q: could expanded be change if drillMode is 'expanded'?
             if (this.m_contentHandler.IsHierarchical())
             {
+                // clear collapsed items var
+                this._collapsedKeys = undefined;
+
                 expanded = options['expanded'];
 
                 if (Array.isArray(expanded))
@@ -2488,8 +2529,17 @@ oj._ojListView = _ListViewUtils.clazz(Object,
                 elem = $(elem);
                 if (!this.SkipFocus(elem))
                 {
-                    // set it active
-                    this._activeAndFocus(elem, null);
+                    active= document.activeElement;
+                    // update tab index and focus only if listview currently has focus
+                    if (active && this.element.get(0).contains(active))
+                    {
+                        this._activeAndFocus(elem, null);
+                    }
+                    else
+                    {
+                        // update internal state only
+                        this._setActive(elem, null);
+                    }
                 }
             }
         }
@@ -2514,6 +2564,29 @@ oj._ojListView = _ListViewUtils.clazz(Object,
         if (options['contextMenu'] != null)
         {
             this._addContextMenu(options['contextMenu']);
+        }
+
+        if (options['scrollTop'] != null)
+        {
+            scroller = this._getScroller();
+            pos = options['scrollTop'];
+            if (pos != null && !isNaN(pos))
+            {
+                scroller.scrollTop = pos;
+            }
+        }
+
+        // if reorder switch to enabled/disabled, we'll need to make sure any reorder styling classes are added/removed from focused item
+        if (this.m_dndContext != null && this.m_active != null && options['dnd'] != null && options['dnd']['reorder'] != null)
+        {
+            if (options['dnd']['reorder']['items'] === 'enabled')
+            {
+                this.m_dndContext._setItemDraggable(this.m_active['elem']);
+            }
+            else if (options['dnd']['reorder']['items'] === 'disabled')
+            {
+                this.m_dndContext._unsetItemDraggable(this.m_active['elem']);
+            }
         }
 
         return false;
@@ -3114,8 +3187,11 @@ oj._ojListView = _ListViewUtils.clazz(Object,
                 // checks if expand all
                 if (this._isExpandAll())
                 {
-                    // don't animate
-                    this.ExpandItem($(elem), null, false, null, false, false, false);
+                    if (this._collapsedKeys == undefined)
+                    {
+                        // don't animate
+                        this.ExpandItem($(elem), null, false, null, false, false, false);
+                    }
                 }
                 else if (Array.isArray(expanded))
                 {
@@ -3123,7 +3199,8 @@ oj._ojListView = _ListViewUtils.clazz(Object,
                     self = this;
                     $.each(expanded, function(index, value)
                     {
-                        if (value == context['key'])
+                        // if it was explicitly collapsed
+                        if (value == context['key'] && (self._collapsedKeys == undefined || self._collapsedKeys.indexOf(value) == -1))
                         {
                             // don't animate
                             self.ExpandItem($(elem), null, false, null, false, false, false);
@@ -3194,8 +3271,39 @@ oj._ojListView = _ListViewUtils.clazz(Object,
             this._initFocus();
         }
 
+        // update scroll position if it's not in sync
+        this.syncScrollPosition();
+
         // fire ready event
         this.Trigger("ready", null, {});
+    },
+
+    /**
+     * Synchronize the scroll position
+     * @protected
+     */
+    syncScrollPosition: function()
+    {
+        var top, scroller;
+
+        top = this.GetOption("scrollTop");
+        if (!isNaN(top))
+        {
+            scroller = this._getScroller();
+            if (top != scroller.scrollTop)
+            {
+                scroller.scrollTop = top;
+
+                // checks if further scrolling is needed
+                if (scroller.scrollTop != top)
+                {
+                    this._skipScrollUpdate = true;
+                    return;
+                }
+            }
+        }
+
+        this._skipScrollUpdate = false;
     },
 
     /**
@@ -3261,12 +3369,6 @@ oj._ojListView = _ListViewUtils.clazz(Object,
         if (eventType === "keyboard")
         {
             openOptions["position"] = {"my": "start top", "at": "start bottom", "of": this.m_active['elem']};
-        }
-
-        // if drag and drag is enabled, add default context menu
-        if (this.m_dndContext != null)
-        {
-            this.m_dndContext._handleContextMenuBeforeOpen($(menu.element), event);
         }
 
         this.ojContext._OpenContextMenu(event, eventType, openOptions);
@@ -3358,6 +3460,46 @@ oj._ojListView = _ListViewUtils.clazz(Object,
     },
 
     /**
+     * Make all tabbable elements before and include current item un-tabbable
+     * @param {Element} item
+     * @private
+     */
+    _disableAllTabbableElementsBeforeItem: function(item)
+    {
+        var items, index, i;
+
+        items = this._getItemsCache();
+        index = items.index(item);
+        // if -1 it will just bail
+        for (i=0; i<=index; i++)
+        {
+            this._disableAllTabbableElements(items[i]);
+        }
+    },
+
+    /**
+     * Make all tabbable elements after and include current item un-tabbable
+     * @param {Element} item
+     * @private
+     */
+    _disableAllTabbableElementsAfterItem: function(item)
+    {
+        var items, index, i;
+
+        items = this._getItemsCache();
+        index = items.index(item);
+        if (index == -1)
+        {
+            return;
+        }
+
+        for (i=index; i<=items.length-1; i++)
+        {
+            this._disableAllTabbableElements(items[i]);
+        }
+    },
+
+    /**
      * Make all previously tabbable elements within the element tabbable again
      * @param {Element} elem
      * @private
@@ -3413,6 +3555,25 @@ oj._ojListView = _ListViewUtils.clazz(Object,
 
     /*************************************** Event handlers *****************************/
     /**
+     * Determine whether the event is triggered by interaction with element inside ListView
+     * Note that Firefox 48 does not support relatedTarget on blur event, see
+     * _supportRelatedTargetOnBlur method
+     * @param {Event} event the focus or blur event
+     * @return {boolean} true if focus/blur is triggered by interaction with element within listview, false otherwise.
+     * @private
+     */
+    _isFocusBlurTriggeredByDescendent: function(event)
+    {
+        if (event.relatedTarget === undefined)
+            return true;
+
+        if (event.relatedTarget == null || !$.contains(this.ojContext.element.get(0), /** @type {Element} */ (event.relatedTarget)))
+            return false;
+        else
+            return true;
+    },
+
+    /**
      * Handler for focus event
      * @param {Event} event the focus event
      * @protected
@@ -3427,7 +3588,7 @@ oj._ojListView = _ListViewUtils.clazz(Object,
         if (this.m_active == null)
         {
             // checks whether there's pending click to active
-            if (!this.m_preActive)
+            if (!this.m_preActive && !this._isFocusBlurTriggeredByDescendent(event))
             {
                 this._initFocus(event);
             }
@@ -3435,16 +3596,15 @@ oj._ojListView = _ListViewUtils.clazz(Object,
         else
         {
             // focus could be caused by pending click to active
-            if (!this.m_preActive)
+            // do not do this on iOS or Android, otherwise VO/talkback will not work correctly
+            if (!this.m_preActive && !this._isNonWindowTouch() && !this._isFocusBlurTriggeredByDescendent(event))
             {
                 this.HighlightActive();
             }
 
             // remove tab index from root and restore tab index on focus item
-/*
             this.RemoveRootElementTabIndex();
             this._setTabIndex(this.m_active['elem']);
-*/
         }
     },
 
@@ -3486,27 +3646,65 @@ oj._ojListView = _ListViewUtils.clazz(Object,
     },
 
     /**
+     * Checks whether the browser supports relatedTarget field for blur event
+     * @return {boolean} true if supported, false otherwise
+     * @private
+     */
+    _supportRelatedTargetOnBlur: function()
+    {
+        var agent = oj.AgentUtils.getAgentInfo();
+        if (agent['browser'] == oj.AgentUtils.BROWSER.FIREFOX && parseInt(agent['browserVersion'], 10) < 48)
+        {
+            return false;
+        }
+
+        return true;
+    },
+
+    /**
+     * Detects whether this is a double blur event fired by IE11
+     * @param {Event} event the blur event
+     * @private
+     */
+    _isExtraBlurEvent: function(event)
+    {
+        var agent = oj.AgentUtils.getAgentInfo();
+        if (event.relatedTarget == null && agent['browser'] == oj.AgentUtils.BROWSER.IE && event.target == this.ojContext.element.get(0))
+        {
+            return true;
+        }
+
+        return false;
+    },
+
+    /**
      * Handler for blur event
      * @param {Event} event the blur event
      * @protected
      */
     HandleBlur: function(event)
     {
+        // NOTE that prior to a fix in Firefox 48, relatedTarget is always null
+        // just bail in case if it wasn't supported
+        // NOTE also IE11 fires an extra blur event with null relatedTarget, should bail as well
+        if (!this._supportRelatedTargetOnBlur() || this._isExtraBlurEvent(event))
+        {
+            return;
+        }
+
         // event.relatedTarget would be null if focus out of page
         // the other check is to make sure the blur is not caused by shifting focus within listview
-        if (event.relatedTarget == null || !$.contains(this.element.get(0), /** @type {Element} */ (event.relatedTarget)))
+        if (!this._isFocusBlurTriggeredByDescendent(event))
         {
             this._getListContainer().removeClass("oj-focus-ancestor");
             this.UnhighlightActive();
 
             // remove tab index from focus item and restore tab index on list
-/*
             if (this.m_active != null)
             {
                 this._resetTabIndex(this.m_active['elem']);
             }
             this.SetRootElementTabIndex();
-*/
         }
     },
 
@@ -3627,8 +3825,6 @@ oj._ojListView = _ListViewUtils.clazz(Object,
     {
         var item, target;
 
-        this.m_preActive = true;
-
         // click on item
         target = $(event.target);
 
@@ -3638,8 +3834,17 @@ oj._ojListView = _ListViewUtils.clazz(Object,
             this.m_dndContext._setDraggable(target);
         }
 
-        // click on item
-        item = this._findItem(target);
+        // click on item, explicitly pass true on findItem
+        // so that it will return non-null value if clickthrough disabled element or oj-component
+        // is encountered
+        item = this._findItem(target, true);
+        // we'll still need to set the flag so that the focus do not shift
+        if (item != null && this._isClickthroughDisabled(item))
+        {
+            this.m_preActive = true;
+            item = null;
+        }
+
         if (item == null || item.length == 0 || this.SkipFocus(item) || target.hasClass("oj-listview-drag-handle"))
         {
             // one of the following happened:
@@ -3650,6 +3855,8 @@ oj._ojListView = _ListViewUtils.clazz(Object,
             // 5) target is the drag handle
             return;
         }
+
+        this.m_preActive = true;
 
         // make sure listview has focus
         if (!this._getListContainer().hasClass("oj-focus-ancestor"))
@@ -3677,7 +3884,7 @@ oj._ojListView = _ListViewUtils.clazz(Object,
      */
     HandleTouchEndOrCancel: function(event)
     {
-        var offset, action = "pointerUp", effect, elem;
+        var offset, action = "pointerUp", effect, elem, groupItem;
 
         // unhighlight item that got focus in touchstart
         if (this.m_preActiveItem != null)
@@ -3693,8 +3900,15 @@ oj._ojListView = _ListViewUtils.clazz(Object,
                 effect = this.getAnimationEffect(action);
                 effect['offsetX'] = ((this.m_touchPos.x) - offset['left']) + 'px';
                 effect['offsetY'] = ((this.m_touchPos.y) - offset['top']) + 'px';
-
-                elem = /** @type {Element} */ (this.m_preActiveItem.get(0));
+                groupItem = this.m_preActiveItem.children('.' + this.getGroupItemStyleClass());
+                if (groupItem.length > 0)
+                {
+                  elem = /** @type {Element} */ (groupItem.get(0));
+                } 
+                else 
+                {
+                  elem = /** @type {Element} */ (this.m_preActiveItem.get(0));
+                }
                 // we don't really care when animation ends
                 oj.AnimationUtils.startAnimation(elem, action, effect);
 
@@ -3705,6 +3919,42 @@ oj._ojListView = _ListViewUtils.clazz(Object,
         // need this so that on mouse over handler would not apply the styles if the last touch was within the last n ms
         this._lastTouch = Date.now();
         this._handleMouseOut(event);
+    },
+
+    /**
+     * Enters actionable mode
+     * @private
+     */
+    _enterActionableMode: function()
+    {
+        var current, first;
+
+        current = this.m_active['elem'];
+
+        // in case content has been updated under the cover
+        this._disableAllTabbableElements(current);
+
+        // re-enable all tabbable elements
+        this._enableAllTabbableElements(current);                    
+
+        // only go into actionable mode if there is something to focus
+        first = current.find("[data-first]");
+        if (first.length > 0)
+        {
+            this._setActionableMode(true);     
+        }
+    },
+
+    /**
+     * Exits actionable mode
+     * @private
+     */
+    _exitActionableMode: function()
+    {
+        this._setActionableMode(false);
+
+        // disable all tabbable elements in the item again
+        this._disableAllTabbableElements(this.m_active['elem']);
     },
 
     /**
@@ -3735,15 +3985,6 @@ oj._ojListView = _ListViewUtils.clazz(Object,
             }
             else
             {
-                if (this._isActionableMode() && this.m_active != null)
-                {
-                    // click on item should exit actionable mode
-                    this._setActionableMode(false);
-
-                    // disable all tabbable elements in the item again
-                    this._disableAllTabbableElements(this.m_active['elem']);
-                }
-
                 // click on item
                 item = this._findItem(target);
                 if (item == null || item.length == 0 || this.SkipFocus(item))
@@ -3754,6 +3995,12 @@ oj._ojListView = _ListViewUtils.clazz(Object,
                     // 3) target is an oj-component
                     // 4) target or one of its ancestors has the oj-clickthrough-disabled marker class
                     return;
+                }
+
+                if (this._isActionableMode() && this.m_active != null && this.m_active['elem'].get(0) != item.get(0))
+                {
+                    // click on item other than current focus item should exit actionable mode
+                    this._exitActionableMode();
                 }
 
                 // make sure listview has focus
@@ -3809,6 +4056,16 @@ oj._ojListView = _ListViewUtils.clazz(Object,
     },
 
     /**
+     * Whether it is non-window touch device (iOS or Android)
+     * @return {boolean} true if it is a non-window touch device
+     * @private
+     */
+    _isNonWindowTouch: function()
+    {
+        return this._isTouchSupport() && oj.AgentUtils.getAgentInfo()['os'] != oj.AgentUtils.OS.WINDOWS;
+    },
+
+    /**
      * Returns either the ctrl key or the command key in Mac OS
      * @param {!Object} event
      * @private
@@ -3856,16 +4113,22 @@ oj._ojListView = _ListViewUtils.clazz(Object,
      * Find the item element from target, if target is an oj-component or contains the
      * oj-clickthrough-disabled class then returns null.
      * @param {jQuery} target the element to check
+     * @param {boolean=} retElemOnClickthroughDisabled optional, set to true to force non-null value to return when 
+     *                   clickthrough-disabled or oj-component is encountered
      * @return {jQuery|null} the item element or null if click through is disabled for this element or one of its ancestors.
      * @private
      */
-    _findItem: function(target)
+    _findItem: function(target, retElemOnClickthroughDisabled)
     {
         var current = target;
         while (current.length > 0)
         {
             if (this._isClickthroughDisabled(current))
             {
+                if (retElemOnClickthroughDisabled)
+                {
+                    return current;
+                }
                 return null;
             }
 
@@ -4018,6 +4281,24 @@ oj._ojListView = _ListViewUtils.clazz(Object,
     },
 
     /**
+     * Handles when navigate to the last item 
+     * @param {jQuery} item the item element
+     */
+    _handleLastItemKeyboardFocus: function(item)
+    {
+        var next = item.get(0).nextElementSibling;
+        if (next == null || !$(next).hasClass(this.getItemElementStyleClass()))
+        {
+           // it's the last element, check scroll bar to make sure it scrolls all the way to the bottom
+           var scroller = this._getScroller();
+           if (scroller.scrollTop < scroller.scrollHeight)
+           {
+               scroller.scrollTop = scroller.scrollHeight;
+           }
+        }
+    },
+
+    /**
      * Handles arrow keys navigation on item
      * @param {number} keyCode description
      * @param {boolean} isExtend
@@ -4108,6 +4389,8 @@ oj._ojListView = _ListViewUtils.clazz(Object,
                     {
                         this._activeAndFocus(next, event);
                         this.m_isNavigate = true;
+
+                        this._handleLastItemKeyboardFocus(next);
                     }
                 }
 
@@ -4542,7 +4825,11 @@ oj._ojListView = _ListViewUtils.clazz(Object,
         {
             if (highlight)
             {
-                this._focusInHandler(elem);
+                // don't apply focus ring on item if we are in actionable mode
+                if (this.m_keyMode != "actionable")
+                {
+                    this._focusInHandler(elem);
+                }
             }
             else
             {
@@ -4913,10 +5200,7 @@ oj._ojListView = _ListViewUtils.clazz(Object,
             // Esc key goes to navigation mode
             if (keyCode == this.ESC_KEY)
             {
-                this._setActionableMode(false);
-
-                // disable all tabbable elements in the item again
-                this._disableAllTabbableElements(current);
+                this._exitActionableMode();
 
                 // force focus back on the active cell
                 this.HighlightActive(true);
@@ -4956,15 +5240,14 @@ oj._ojListView = _ListViewUtils.clazz(Object,
             // F2 key goes to actionable mode
             if (keyCode == this.F2_KEY)
             {
-                // re-enable all tabbable elements
-                this._enableAllTabbableElements(current);                    
+                this._enterActionableMode();
 
                 // focus on first focusable item in the cell
                 first = current.find("[data-first]");
                 if (first.length > 0)
                 {
                     first[0].focus();
-                    this._setActionableMode(true);
+                    current.removeClass("oj-focus-highlight");
                 }
             }
             else if (keyCode == this.SPACE_KEY && this._isSelectionEnabled())
@@ -4997,6 +5280,18 @@ oj._ojListView = _ListViewUtils.clazz(Object,
                     processed = this.HandleArrowKeys(keyCode, (shiftKey && this._isSelectionEnabled() && this._isMultipleSelection()), event);
                 }
             }
+            else if (keyCode === this.TAB_KEY)
+            {
+                // content could have changed, disable all elements in items before or after the active item
+                if (event.shiftKey)
+                {
+                    this._disableAllTabbableElementsBeforeItem(current);
+                }
+                else
+                {
+                    this._disableAllTabbableElementsAfterItem(current);
+                }
+            }
         }
 
         return processed;
@@ -5004,6 +5299,58 @@ oj._ojListView = _ListViewUtils.clazz(Object,
     /********************************** End Selection **********************************************/
 
     /********************************** Disclosure **********************************************/
+    /**
+     * Whether the group item is currently in the middle of expanding/collapsing
+     * @param {Object} key the key of the group item
+     * @return {boolean} true if it's expanding/collapsing, false otherwise
+     * @private
+     */
+    _isDisclosing: function(key)
+    {
+        if (key && this.m_disclosing)
+        {
+            return (this.m_disclosing.indexOf(key) > -1);
+        }
+
+        return false;
+    },
+
+    /**
+     * Marks a group item as currently in the middle of expanding/collapsing
+     * @param {Object} key the key of the group item
+     * @param {boolean} flag true or false
+     * @private
+     */
+    _setDisclosing: function(key, flag)
+    {
+        var index;
+
+        if (key == null)
+        {
+            return;
+        }
+
+        if (this.m_disclosing == null)
+        {
+            this.m_disclosing = [];
+        }
+
+        if (flag)
+        {
+            this.m_disclosing.push(key);
+        }
+        else
+        {
+            // there should be at most one entry, but just in case remove all occurrences
+            index = this.m_disclosing.indexOf(key);
+            while (index > -1)
+            {
+                this.m_disclosing.splice(index, 1);
+                index = this.m_disclosing.indexOf(key);
+            }
+        }
+    },         
+
     /**
      * Gets the animation effect for the specific action
      * @param {string} action the action to retrieve the effect
@@ -5061,13 +5408,14 @@ oj._ojListView = _ListViewUtils.clazz(Object,
      * @param {boolean} beforeVetoable true if beforeExpand event can be veto, false otherwise
      * @param {boolean} fireBefore true if this should trigger a beforeExpand event
      * @param {boolean} fireAfter true if this should trigger an expand event
+     * @param {boolean} animate true if animate the expand operation, false otherwise
      */
-    expandKey: function(key, beforeVetoable, fireBefore, fireAfter)
+    expandKey: function(key, beforeVetoable, fireBefore, fireAfter, animate)
     {
         var item = this.FindElementByKey(key);
         if (item != null)
         {
-            this.ExpandItem($(item), null, false, key, beforeVetoable, fireAfter, fireBefore);    
+            this.ExpandItem($(item), null, animate, key, beforeVetoable, fireAfter, fireBefore);    
         }
     },
 
@@ -5098,7 +5446,7 @@ oj._ojListView = _ListViewUtils.clazz(Object,
      */
     ExpandItem: function(item, event, animate, key, beforeVetoable, fireEvent, fireBeforeEvent)
     {
-        var ui, cancelled;
+        var ui, cancelled, index;
 
         // checks if it's already collapsed or not collapsible at all
         if (this.GetState(item) != this.STATE_COLLAPSED)
@@ -5111,6 +5459,13 @@ oj._ojListView = _ListViewUtils.clazz(Object,
         {
             key = this.GetKey(item[0]);
         }
+
+        // bail if it's in the middle of expanding/collapsing
+        if (animate && this._isDisclosing(key))
+        {
+            return;
+        }
+
         ui = {"item": item, "key": key};
 
         if (fireBeforeEvent)
@@ -5123,6 +5478,11 @@ oj._ojListView = _ListViewUtils.clazz(Object,
         }
 
         this.signalTaskStart(); // signal method task start
+
+        if (animate)
+        {
+            this._setDisclosing(key, true);
+        }
         this.m_contentHandler.Expand(item, function(groupItem){this._expandSuccess(groupItem, animate, event, ui, fireEvent)}.bind(this));
 
         // clear items cache
@@ -5132,6 +5492,16 @@ oj._ojListView = _ListViewUtils.clazz(Object,
         if (event != null)
         {
             event.stopPropagation();
+        }
+
+        // update var that keeps track of collapsed items
+        if (this._collapsedKeys != null)
+        {
+            index = this._collapsedKeys.indexOf(key);
+            if (index != -1)
+            {
+                this._collapsedKeys.splice(index, 1);
+            }
         }
 
         this.signalTaskEnd(); // signal method task end
@@ -5150,6 +5520,9 @@ oj._ojListView = _ListViewUtils.clazz(Object,
         var item, collapseClass, expandClass, groupItemStyleClass, key, expanded, clone, animationPromise, self = this;
 
         this.signalTaskStart(); // signal method task start
+
+        // save the key for use when expand complete
+        groupItem.key = ui['key'];
 
         animationPromise = this.AnimateExpand($(groupItem), animate, event);
 
@@ -5172,7 +5545,9 @@ oj._ojListView = _ListViewUtils.clazz(Object,
             });
         }
 
-        this.signalTaskEnd(); // signal method task end
+        animationPromise.then(function() {
+          self.signalTaskEnd(); // signal method task end
+        });
     },
 
     /**
@@ -5291,6 +5666,7 @@ oj._ojListView = _ListViewUtils.clazz(Object,
     AnimateExpandComplete: function(groupItem)
     {
         groupItem.removeClass(this.getGroupCollapseStyleClass()).addClass(this.getGroupExpandStyleClass());
+        this._setDisclosing(groupItem[0].key, false);
     },
 
     /**
@@ -5299,13 +5675,14 @@ oj._ojListView = _ListViewUtils.clazz(Object,
      * @param {Object} key the key of the group item to collapse
      * @param {boolean} fireBefore true if this should trigger a beforeCollapse event
      * @param {boolean} fireAfter true if this should trigger a collapse event
+     * @param {boolean} animate true if animate the collapse operation, false otherwise
      */
-    collapseKey: function(key, fireBefore, fireAfter)
+    collapseKey: function(key, fireBefore, fireAfter, animate)
     {
         var item = this.FindElementByKey(key);
         if (item != null)
         {
-            this.CollapseItem($(item), null, false, key, fireBefore, fireAfter);    
+            this.CollapseItem($(item), null, animate, key, fireBefore, fireAfter);    
         }
     },
 
@@ -5343,6 +5720,13 @@ oj._ojListView = _ListViewUtils.clazz(Object,
         {
             key = this.GetKey(item[0]);
         }
+
+        // bail if it is in the middle of expanding/collapsing
+        if (animate && this._isDisclosing(key))
+        {
+            return;
+        }
+
         ui = {"item": item, "key": key};
 
         cancelled = !this.Trigger("beforeCollapse", event, ui);
@@ -5353,8 +5737,13 @@ oj._ojListView = _ListViewUtils.clazz(Object,
 
         this.signalTaskStart(); // signal method task start
 
+        if (animate)
+        {
+            this._setDisclosing(key, true);
+        }
+
         // animate collapse
-        animationPromise = this.AnimateCollapse(item, animate, event);
+        animationPromise = this.AnimateCollapse(item, key, animate, event);
 
         // update aria expanded
         this.SetState(item, this.STATE_COLLAPSED);
@@ -5381,19 +5770,34 @@ oj._ojListView = _ListViewUtils.clazz(Object,
             })
         }
 
-        this.signalTaskEnd(); // signal method task end
+        // keep track of collapsed item
+        if (this._collapsedKeys == undefined)
+        {
+             this._collapsedKeys = [];
+        }
+            
+        if (this._collapsedKeys.indexOf(key) == -1)
+        {
+            this._collapsedKeys.push(key);
+        }
+
+        animationPromise.then(function()
+        {
+          self.signalTaskEnd(); // signal method task end
+        });
     },
 
     /**
      * Animate collapse operation
      * To be change by NavList
      * @param {jQuery} item the item to collapse
+     * @param {Object} key the key of the group item
      * @param {boolean} animate true if animate the collapse operation, false otherwise
      * @param {Event} event the event that triggers collapse.  Note that event could be null in the case where this is programmatically done by the widget
      * @return {Promise} A Promise that resolves when collapse animation completes
      * @protected
      */
-    AnimateCollapse: function(item, animate, event)
+    AnimateCollapse: function(item, key, animate, event)
     {
         var totalHeight = 0, groupItem, animationPromise, animationResolve, self = this, effect, elem, action = "collapse", promise;
         
@@ -5403,6 +5807,8 @@ oj._ojListView = _ListViewUtils.clazz(Object,
         });
 
         groupItem = item.children("ul").first();
+        // save the key for collapse animation complete
+        groupItem[0].key = key;
 
         if (animate)
         {
@@ -5468,6 +5874,8 @@ oj._ojListView = _ListViewUtils.clazz(Object,
         {
             this.m_contentHandler.Collapse(groupItem);
         }
+
+        this._setDisclosing(groupItem[0].key, false);
     },
 
     /**
@@ -5533,7 +5941,8 @@ oj._ojListView = _ListViewUtils.clazz(Object,
      */
     GetContainerStyleClass: function()
     {
-        if (this._isTouchSupport())
+        // do not set overflow to scroll for windows touch enabled devices 
+        if (this._isNonWindowTouch())
         {
             return "oj-listview oj-listview-container-touch";
         }
@@ -5665,21 +6074,95 @@ oj._ojListView = _ListViewUtils.clazz(Object,
 
     /*********************************** Pin Header *********************************************/
     /**
+     * Helper method to prevent scroll by mouse wheel causes the page to scroll because it has reached the start/end of the list
+     * @param {Element} scroller the scroller
+     * @param {Event} event the mouse wheel event
+     * @private
+     */
+    _preventMouseWheelOverscroll: function(scroller, event)
+    {
+        var delta = event.originalEvent.wheelDelta;
+        if (isNaN(delta))
+        {
+            return;
+        }
+
+        if (delta < 0)
+        {
+            // scroll down
+            if ((scroller.scrollTop + scroller.clientHeight + Math.abs(delta)) >= scroller.scrollHeight)
+            { 
+                scroller.scrollTop = scroller.scrollHeight;
+                event.preventDefault();
+            }
+        }
+        else
+        {
+            // scroll up
+            if ((scroller.scrollTop - delta) <= 0)
+            {
+                scroller.scrollTop = 0;
+                event.preventDefault();
+            }
+        }
+    },
+
+   /**
+    * Retrieve the element where the scroll listener is registered on.
+    * @private
+    */
+    _getScrollEventElement: function()
+    {
+        var scroller = this._getScroller();
+
+        // if scroller is the body, listen for window scroll event.  This is the only way that works consistently across all browsers.
+        if (scroller == document.body || scroller == document.documentElement)
+        {
+            return window;
+        }
+        else
+        {
+            return scroller;
+        }
+    },
+
+    /**
      * Register scroll listener
      * @private
      */
     _registerScrollHandler: function()
     {
-        var self = this;
+        var self = this, scrollElem;
 
-        this.ojContext._off(this._getListContainer(), "scroll");
+        scrollElem = $(this._getScrollEventElement());
 
-        if (this._isPinGroupHeader())
-        {
-            this.ojContext._on(this._getListContainer(), {
-                "scroll": function(event)
+        this.ojContext._off(scrollElem, "scroll mousewheel");
+
+        this.ojContext._on(scrollElem, {
+            "scroll": function(event)
+            {
+                // update scrollPosition, don't if scroll isn't complete
+                if (!self._skipScrollUpdate)
+                {
+                    self.SetOption('scrollTop', self._getScroller().scrollTop, {'_context': {originalEvent: event, internalSet: true}});
+                }
+                self._skipScrollUpdate = false;
+
+                // handle pinning group header 
+                if (self._isPinGroupHeader())
                 {
                     self._handlePinGroupHeader();
+                }
+            }
+        });
+
+        // only do this for highwatermark scrolling, other cases we have (and should not care) no knowledge about the scroller
+        if (this.options['scrollPolicy'] == "loadMoreOnScroll")
+        {
+            this.ojContext._on(scrollElem, {
+                "mousewheel": function(event)
+                {
+                    self._preventMouseWheelOverscroll(self._getScroller(), event);
                 }
             });
         }
@@ -5731,7 +6214,7 @@ oj._ojListView = _ListViewUtils.clazz(Object,
      */
     _unpinGroupItem: function(groupItem)
     {
-        groupItem.style.position = "static";
+        $(groupItem).removeClass("oj-pinned");
         groupItem.style.top = "auto";
         groupItem.style.width = "auto";
     },
@@ -5776,7 +6259,7 @@ oj._ojListView = _ListViewUtils.clazz(Object,
             scrollTop = scrollTop - height;
         }
 
-        groupItem.style.position = "absolute";
+        $(groupItem).addClass("oj-pinned");
         groupItem.style.top = scrollTop + 'px';
         groupItem.style.width = width + 'px';
     },
@@ -5787,10 +6270,10 @@ oj._ojListView = _ListViewUtils.clazz(Object,
      */
     _handlePinGroupHeader: function()
     {
-        var container, scrollTop, groupItemToPin, groupItems, pinHeaderHeight, i, groupItem, top, bottom, next;
+        var scroller, scrollTop, groupItemToPin, groupItems, pinHeaderHeight, i, groupItem, top, bottom, next;
 
-        container = this._getListContainer().get(0);
-        scrollTop = container.scrollTop;
+        scroller = this._getScroller();
+        scrollTop = scroller.scrollTop;
 
         // see if we are at the top
         if (this.m_groupItemToPin != null && scrollTop == 0)
@@ -6539,6 +7022,19 @@ oj.__registerWidget('oj.ojListView', $['oj']['baseComponent'],
                  */
                 scrollPolicyOptions: {'fetchSize': 25, 'maxCount': 500},
                 /**
+                 * The vertical scroll position of ListView.
+                 *
+                 * @expose
+                 * @memberof! oj.ojListView
+                 * @instance
+                 * @type {number}
+                 * @default <code class="prettyprint">0</code>
+                 *
+                 * @example <caption>Initialize the list view to a specific scroll position:</caption>
+                 * $( ".selector" ).ojListView({ "scrollTop": 100 });
+                 */
+                scrollTop: 0,
+                /**
                  * The current selections in the ListView. An empty array indicates nothing is selected.
                  *
                  * @expose
@@ -6573,7 +7069,7 @@ oj.__registerWidget('oj.ojListView', $['oj']['baseComponent'],
                  *
                  * @expose
                  * @event
-                 * @memberof! oj.ojListView
+                 * @memberof oj.ojListView
                  * @instance
                  * @property {Event} event <code class="prettyprint">jQuery</code> event object
                  * @property {Object} ui Parameters
@@ -6599,7 +7095,7 @@ oj.__registerWidget('oj.ojListView', $['oj']['baseComponent'],
                  *
                  * @expose
                  * @event
-                 * @memberof! oj.ojListView
+                 * @memberof oj.ojListView
                  * @instance
                  * @property {Event} event <code class="prettyprint">jQuery</code> event object
                  * @property {Object} ui Parameters
@@ -6623,7 +7119,7 @@ oj.__registerWidget('oj.ojListView', $['oj']['baseComponent'],
                  *
                  * @expose
                  * @event
-                 * @memberof! oj.ojListView
+                 * @memberof oj.ojListView
                  * @instance
                  * @property {Event} event <code class="prettyprint">jQuery</code> event object
                  * @property {Object} ui Parameters
@@ -6652,7 +7148,7 @@ oj.__registerWidget('oj.ojListView', $['oj']['baseComponent'],
                  *
                  * @expose
                  * @event
-                 * @memberof! oj.ojListView
+                 * @memberof oj.ojListView
                  * @instance
                  * @property {Event} event <code class="prettyprint">jQuery</code> event object
                  * @property {Object} ui Parameters
@@ -6679,7 +7175,7 @@ oj.__registerWidget('oj.ojListView', $['oj']['baseComponent'],
                  *
                  * @expose
                  * @event
-                 * @memberof! oj.ojListView
+                 * @memberof oj.ojListView
                  * @instance
                  * @property {Event} event <code class="prettyprint">jQuery</code> event object
                  * @property {Object} ui Parameters
@@ -6706,7 +7202,7 @@ oj.__registerWidget('oj.ojListView', $['oj']['baseComponent'],
                  *
                  * @expose
                  * @event
-                 * @memberof! oj.ojListView
+                 * @memberof oj.ojListView
                  * @instance
                  * @property {Event} event <code class="prettyprint">jQuery</code> event object
                  * @property {Object} ui Parameters
@@ -6730,7 +7226,7 @@ oj.__registerWidget('oj.ojListView', $['oj']['baseComponent'],
                  *
                  * @expose
                  * @event
-                 * @memberof! oj.ojListView
+                 * @memberof oj.ojListView
                  * @instance
                  * @property {Event} event <code class="prettyprint">jQuery</code> event object
                  * @property {Object} ui Parameters
@@ -6754,7 +7250,7 @@ oj.__registerWidget('oj.ojListView', $['oj']['baseComponent'],
                  *
                  * @expose
                  * @event
-                 * @memberof! oj.ojListView
+                 * @memberof oj.ojListView
                  * @instance
                  * @property {Event} event <code class="prettyprint">jQuery</code> event object
                  * @property {Object} ui Parameters
@@ -6779,7 +7275,7 @@ oj.__registerWidget('oj.ojListView', $['oj']['baseComponent'],
                  *
                  * @expose
                  * @event
-                 * @memberof! oj.ojListView
+                 * @memberof oj.ojListView
                  * @instance
                  * @property {Event} event <code class="prettyprint">jQuery</code> event object
                  * @property {Object} ui Parameters
@@ -6804,7 +7300,7 @@ oj.__registerWidget('oj.ojListView', $['oj']['baseComponent'],
                  *
                  * @expose
                  * @event
-                 * @memberof! oj.ojListView
+                 * @memberof oj.ojListView
                  * @instance
                  * @property {Event} event <code class="prettyprint">jQuery</code> event object
                  * @property {Object} ui Parameters
@@ -6839,7 +7335,7 @@ oj.__registerWidget('oj.ojListView', $['oj']['baseComponent'],
                  *
                  * @expose
                  * @event
-                 * @memberof! oj.ojListView
+                 * @memberof oj.ojListView
                  * @instance
                  * @property {Event} event <code class="prettyprint">jQuery</code> event object
                  * @property {Object} ui Parameters
@@ -6865,7 +7361,7 @@ oj.__registerWidget('oj.ojListView', $['oj']['baseComponent'],
                  * @expose
                  * @event
                  * @deprecated Use the <a href="#whenReady">whenReady</a> method instead. 
-                 * @memberof! oj.ojListView
+                 * @memberof oj.ojListView
                  * @instance
                  * @property {Event} event <code class="prettyprint">jQuery</code> event object
                  * @property {Object} ui Parameters
@@ -6887,7 +7383,7 @@ oj.__registerWidget('oj.ojListView', $['oj']['baseComponent'],
                  *
                  * @expose
                  * @event
-                 * @memberof! oj.ojListView
+                 * @memberof oj.ojListView
                  * @instance
                  * @property {Event} event <code class="prettyprint">jQuery</code> event object
                  * @property {Object} ui Parameters
@@ -7043,6 +7539,16 @@ oj.__registerWidget('oj.ojListView', $['oj']['baseComponent'],
     },
 
    /**
+    * Invoked when application calls oj.Components.subtreeAttached.
+    * @override
+    * @private
+    */
+    _NotifyAttached: function()
+    {
+        this.listview.notifyAttached();
+    },
+
+   /**
     * In browsers [Chrome v35, Firefox v24.5, IE9, Safari v6.1.4], blur and mouseleave events are generated for hidden content but not detached content,
     * so for detached content only, we must use this hook to remove the focus and hover classes.
     * @override
@@ -7086,7 +7592,7 @@ oj.__registerWidget('oj.ojListView', $['oj']['baseComponent'],
      * <p>This method does not accept any arguments.
      *
      * @expose
-     * @memberof! oj.ojListView
+     * @memberof oj.ojListView
      * @instance
      *
      * @example <caption>Invoke the <code class="prettyprint">refresh</code> method:</caption>
@@ -7125,7 +7631,7 @@ oj.__registerWidget('oj.ojListView', $['oj']['baseComponent'],
      * </ul>
      *
      * @expose
-     * @memberof! oj.ojListView
+     * @memberof oj.ojListView
      * @instance
      * @override
      * @param {Object} locator An Object containing at minimum a subId property
@@ -7149,7 +7655,7 @@ oj.__registerWidget('oj.ojListView', $['oj']['baseComponent'],
      * <a href="#getNodeBySubId">getNodeBySubId</a>.
      *
      * @expose
-     * @memberof! oj.ojListView
+     * @memberof oj.ojListView
      * @instance
      * @override
      * @param {!Element} node - child DOM node
@@ -7184,9 +7690,9 @@ oj.__registerWidget('oj.ojListView', $['oj']['baseComponent'],
      * @returns {Object | null} item data<p>
      * @export
      * @expose
-     * @memberof! oj.ojListView
+     * @memberof oj.ojListView
      * @instance
-     * @example <caption>Invoke the <code class="prettyprint"getDataForVisibleItem</code> method:</caption>
+     * @example <caption>Invoke the <code class="prettyprint">getDataForVisibleItem</code> method:</caption>
      * $( ".selector" ).ojListView( "getDataForVisibleItem", {'index': 2} );
      */
     getDataForVisibleItem: function(context)
@@ -7458,6 +7964,9 @@ var ojListViewMeta = {
     },
     "scrollPolicyOptions": {
       "type": "Object<string, number>"
+    },
+    "scrollTop": {
+      "type": "number"
     },
     "selection": {
       "type": "Array<Object>"

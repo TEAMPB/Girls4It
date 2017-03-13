@@ -1,5 +1,5 @@
 /**
-  Copyright (c) 2015, 2016, Oracle and/or its affiliates.
+  Copyright (c) 2015, 2017, Oracle and/or its affiliates.
   The Universal Permissive License (UPL), Version 1.0
 */
 'use strict';
@@ -14,41 +14,14 @@ module.exports = function(grunt) {
   }); 
   
   grunt.loadNpmTasks("grunt-oraclejet");
-  grunt.loadNpmTasks('grunt-contrib-connect');
-  grunt.loadNpmTasks('grunt-open');
-  
-  grunt.initConfig({
-  connect: {
-    dev: {
-      options: {
-        port: 8090,
-        base: 'hybrid/www',
-        keepalive: true
-      }
-    }
-  },
-  open : {
-    dev : {
-      path: 'http://localhost:8090',
-    }
-  } 
-});
 
-  grunt.registerTask("build", (buildType) => {
+  grunt.registerTask("build", "Public task. Calls oraclejet-build to build the oraclejet application. Can be customized with additional build tasks.", (buildType) => {
     grunt.task.run([`oraclejet-build:${buildType}`]);
   });
 
-  grunt.registerTask("serve", (buildType) => {
+  grunt.registerTask("serve", "Public task. Calls oraclejet-serve to serve the oraclejet application. Can be customized with additional serve tasks.", (buildType) => {
     grunt.task.run([`oraclejet-serve:${buildType}`]);
   }); 
-  
-  grunt.registerTask("test", (buildType) => {
-    grunt.task.run(["build","open:dev"]);
-  })
-  
-  grunt.registerTask("startServer",(buildType) => {
-    grunt.task.run(["connect:dev"]);
-  })
 
 };
 

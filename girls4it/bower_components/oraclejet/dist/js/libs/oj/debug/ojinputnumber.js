@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates.
  * The Universal Permissive License (UPL), Version 1.0
  */
 "use strict";
@@ -913,12 +913,10 @@ oj.__registerWidget("oj.ojInputNumber", $['oj']['editableValue'],
     },
     "touchend .oj-inputnumber-button": function(event)
     {
-      _ojInputNumberLastTouch = Date.now();
       this._stop(event);
     },
     "touchcancel .oj-inputnumber-button": function(event)
     {
-      _ojInputNumberLastTouch = Date.now();
       this._stop(event);
     },
     "mousedown .oj-inputnumber-button": function(event)
@@ -1010,16 +1008,26 @@ oj.__registerWidget("oj.ojInputNumber", $['oj']['editableValue'],
     this._refreshStateTheming("readOnly", this.options.readOnly);
     this._refreshRoleSpinbutton("readOnly", this.options.readOnly);
   },
+  // Mark internal JET components for automation support. The automation
+  // support needs to know while traversing the nodes that the JET button/buttonset 
+  // is not the root JET component, but an internal node to a JET component.
+  _markInternalComponents: function ()
+  {
+     this.upButton.attr('data-oj-internal', true);
+     this.downButton.attr('data-oj-internal', true);
+     this.buttonSet.attr('data-oj-internal', true);
+  },
   _createOjButtonset: function()
   {
     var $upButton = this.uiInputNumber.find(".oj-inputnumber-up");
     var $downButton = this.uiInputNumber.find(".oj-inputnumber-down");
     var buttonsetDiv = $upButton[0].parentNode;
     this.upButton = $upButton.ojButton({display: 'icons',
-      icons: {start: 'oj-component-icon oj-inputnumber-up-icon'}});
+      icons: {start: 'oj-component-icon oj-inputnumber-up-icon'}})
     this.downButton = $downButton.ojButton({display: 'icons',
-      icons: {start: 'oj-component-icon oj-inputnumber-down-icon'}});
-    this.buttonSet = $(buttonsetDiv).ojButtonset({focusManagement: 'none'}); 
+      icons: {start: 'oj-component-icon oj-inputnumber-down-icon'}})
+    this.buttonSet = $(buttonsetDiv).ojButtonset({focusManagement: 'none'});
+    this._markInternalComponents();
   },
   /**
    * @private
@@ -1335,11 +1343,7 @@ oj.__registerWidget("oj.ojInputNumber", $['oj']['editableValue'],
    */
   _isRealMouseEvent: function(event)
   {
-    // must be at least 300 for the "300ms" delay
-    if (oj.DomUtils.isTouchSupported())
-      return (Date.now() - _ojInputNumberLastTouch) > 500;
-
-    return true;
+    return ! oj.DomUtils.recentTouchEnd();
   },
   /**
    * disables or enables both the up and down buttons depending upon what the value
@@ -1719,8 +1723,6 @@ oj.__registerWidget("oj.ojInputNumber", $['oj']['editableValue'],
 // "private static members" shared by all inputNumbers
 // -----------------------------------------------------------------------------
 
-var _ojInputNumberLastTouch;
-
 //////////////////     SUB-IDS     //////////////////
 
 /**
@@ -1753,7 +1755,6 @@ var _ojInputNumberLastTouch;
  * var node = $( ".selector" ).ojInputNumber( "getNodeBySubId", {'subId': 'oj-inputnumber-input'} );
  */
 }() ); // end of inputNumber wrapper function
-
 (function() {
 var ojInputNumberMeta = {
   "properties": {

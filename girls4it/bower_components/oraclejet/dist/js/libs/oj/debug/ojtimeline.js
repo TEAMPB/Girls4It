@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates.
  * The Universal Permissive License (UPL), Version 1.0
  */
 "use strict";
@@ -292,12 +292,6 @@ oj.__registerWidget('oj.ojTimeline', $['oj']['dvtTimeComponent'],
       {'path': '_resources/zoomOut_d_bc', 'property': 'border-color'}
     ];
 
-    // Scroll Indicator Icons
-    styleClasses['oj-timeline-scroll-indicator-back'] = {'path': '_resources/scrollLeft', 'property': 'CSS_URL'};
-    styleClasses['oj-timeline-scroll-indicator-forward'] = {'path': '_resources/scrollRight', 'property': 'CSS_URL'};
-    styleClasses['oj-timeline-scroll-indicator-up'] = {'path': '_resources/scrollUp', 'property': 'CSS_URL'};
-    styleClasses['oj-timeline-scroll-indicator-down'] = {'path': '_resources/scrollDown', 'property': 'CSS_URL'};
-
     // Overview Icons
     styleClasses['oj-timeline-overview-window-handle-horizontal'] = {'path': '_resources/overviewHandleHor', 'property': 'CSS_URL'};
     styleClasses['oj-timeline-overview-window-handle-vertical'] = {'path': '_resources/overviewHandleVert', 'property': 'CSS_URL'};
@@ -352,17 +346,6 @@ oj.__registerWidget('oj.ojTimeline', $['oj']['dvtTimeComponent'],
   //** @inheritdoc */
   _GetComponentDeferredDataPaths : function() {
     return {'root': ['series']};
-  },
-  /**
-   * Returns a promise that is resolved when the component is finished rendering.
-   * This can be used to determine when it is okay to call automation and other APIs on the component.
-   * TODO: Remove from jsDoc when method implemented
-   * @override
-   * @private
-   * @instance
-   * @memberof oj.ojTimeline
-   */
-  whenReady : function() {
   }
 
 /**
