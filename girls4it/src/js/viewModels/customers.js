@@ -5,11 +5,17 @@
 /*
  * Your customer ViewModel code goes here
  */
-define(['ojs/ojcore', 'knockout', 'jquery'],
+define(['ojs/ojcore', 'knockout', 'jquery','ojs/ojknockout', 'promise', 'ojs/ojtable', 'ojs/ojarraytabledatasource'],
  function(oj, ko, $) {
   
     function CustomerViewModel() {
       var self = this;
+      
+      
+    var deptArray = [{Id: 1, Name: 'Girls4IT App', Beschreibung: 'Voll cooles Projekt zum Erstellen von mobilen Apps',Tags: 'Apps, Mobile, JET', Projektleiter:'Markus Klenke',Start:'Sommer 2016', Ende:'Sommer 2017'},
+        {Id: 2, Name: 'Test Projekt', Beschreibung: 'Voll cooles Projekt zum Erstellen von mobilen Apps',Tags: 'Apps, Mobile, JET', Projektleiter:'Markus Klenke',Start:'Sommer 2016', Ende:'Sommer 2017'}];
+    self.datasource = new oj.ArrayTableDataSource(deptArray, {idAttribute: 'Id'});
+      
       // Below are a subset of the ViewModel methods invoked by the ojModule binding
       // Please reference the ojModule jsDoc for additionaly available methods.
 

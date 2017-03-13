@@ -5,6 +5,18 @@
 <div class="oj-hybrid-padding">
   <h3>Customers Content Area</h3>
   <div>
-      To change the content of this section, you will make edits to the customers.html file located in the /js/views folder.
+    <table id="table" summary="Department List" aria-label="Departments Table"
+       data-bind="ojComponent: {component: 'ojTable', 
+                                data: datasource, 
+                                columnsDefault: {sortable: 'none'}, 
+                                columns: [{headerText: 'ID', 
+                                           field: 'Id'},
+                                          {headerText: 'Name', 
+                                           field: 'Name'},
+                                          {headerText: 'Beschreibung', 
+                                           field: 'Beschreibung'},
+                                          {headerText: 'Tags', 
+                                           field: 'Tags'}]}">
+</table>
   </div>
 </div>
