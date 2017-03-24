@@ -19,7 +19,7 @@
     },
     "installed_plugins": {
         "cordova-plugin-whitelist": {
-            "PACKAGE_NAME": "de.girls4it"
+            "PACKAGE_NAME": "de.girls4it.app"
         }
     },
     "dependent_plugins": {},

@@ -12,8 +12,8 @@
       "web": "web",
       "hybrid": "hybrid",
       "themes": "themes"
-    }
+    },
+    "defaultBrowser": "chrome"
   },
-  "defaultBrowser": "chrome",
-  "generatorVersion": "2.3.0"
+  "generatorVersion": "3.0.0"
 }

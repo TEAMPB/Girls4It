@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="de.girls4it" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget id="de.girls4it.app" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <feature name="Whitelist">
         <param name="android-package" value="org.apache.cordova.whitelist.WhitelistPlugin" />
         <param name="onload" value="true" />
@@ -8,7 +8,7 @@
     <description>
         A sample Oracle JavaScript Extension Toolkit (JET) mobile app based on Cordova
     </description>
-    <author email="undefined" href="undefined">
+    <author email="undefined" href="http://www.oraclejet.org">
         Oracle Jet Team
     </author>
     <content src="http://localhost:8000/browser/www/index.html" />
